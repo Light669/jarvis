@@ -54,6 +54,22 @@ class Reason(BaseModel):
     new_parent_id: str | None = None
 
 
+class TaskIn(BaseModel):
+    consigne: str
+
+
+class ValidateIn(BaseModel):
+    succes: bool
+    point_echec: str | None = None
+    commentaire: str = ""
+
+
+class MoneyIn(BaseModel):
+    montant_eur: float
+    description: str
+    agent_id: str | None = None
+
+
 def register(app: FastAPI, p, auth) -> None:
     dep = [Depends(auth)]
 
@@ -166,6 +182,53 @@ def register(app: FastAPI, p, auth) -> None:
     @app.get("/api/events/recent", dependencies=dep)
     def recent_events() -> list[dict]:
         return list(p.bus.recent)[-200:]
+
+    # ------------------------------------------------------------------ tâches
+    @app.post("/api/agents/{agent_id}/tasks", dependencies=dep)
+    def assign_task(agent_id: str, body: TaskIn) -> dict:
+        return p.runtime.assign(OWNER, agent_id, body.consigne)
+
+    @app.get("/api/tasks", dependencies=dep)
+    def tasks(agent_id: str | None = None, limit: int = 100) -> list[dict]:
+        if agent_id:
+            return p.db.query("SELECT * FROM tasks WHERE agent_id=? ORDER BY debut DESC LIMIT ?", (agent_id, limit))
+        return p.db.query("SELECT * FROM tasks ORDER BY debut DESC LIMIT ?", (limit,))
+
+    @app.get("/api/tasks/{task_id}", dependencies=dep)
+    def task(task_id: str) -> dict:
+        return p.runtime.task(task_id)
+
+    @app.post("/api/tasks/{task_id}/validate", dependencies=dep)
+    def validate_task(task_id: str, body: ValidateIn) -> dict:
+        return p.runtime.validate(OWNER, task_id, body.succes, body.point_echec, body.commentaire)
+
+    # ------------------------------------------------------------------ budget
+    @app.get("/api/budget", dependencies=dep)
+    def budget() -> dict:
+        return p.budget.summary()
+
+    @app.get("/api/agents/{agent_id}/costs", dependencies=dep)
+    def agent_costs(agent_id: str) -> dict:
+        return p.budget.agent_costs(agent_id)
+
+    @app.post("/api/budget/expense", dependencies=dep)
+    def expense(body: MoneyIn) -> dict:
+        p.budget.record_expense(OWNER, body.montant_eur, body.description, body.agent_id)
+        return p.budget.summary()
+
+    @app.post("/api/budget/revenue", dependencies=dep)
+    def revenue(body: MoneyIn) -> dict:
+        p.budget.record_revenue(OWNER, body.montant_eur, body.description)
+        return p.budget.summary()
+
+    # ------------------------------------------------------------------ arrêt d'urgence
+    @app.post("/api/emergency/stop", dependencies=dep)
+    def emergency_stop(body: Reason | None = None) -> dict:
+        return p.emergency.stop(OWNER, (body.raison if body else "") or "arrêt d'urgence depuis le tableau de bord")
+
+    @app.post("/api/emergency/resume", dependencies=dep)
+    def emergency_resume() -> dict:
+        return p.emergency.resume(OWNER)
 
     for extra in getattr(p, "route_registrars", []):
         extra(app, p, dep)

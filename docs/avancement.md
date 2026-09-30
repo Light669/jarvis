@@ -30,3 +30,19 @@ Ce qui ne peut être prouvé que sur le PC Windows du Propriétaire est listé d
 - chaîne de hash : altération, suppression de ligne, troncature, continuité après redémarrage ;
 - masquage : aucun secret dans les logs ;
 - API : 401 sans jeton, CRUD, pause, archivage sans raison refusé, recherche/filtre des logs, export CSV, WebSocket refusé sans jeton.
+
+## Phase 3 — Runtime et LLM Gateway ✅
+**Livré**
+- `gateway/` : un seul client « compatible OpenAI » pour Ollama, Groq, Gemini, OpenRouter, Mistral (+ `MockProvider` hors ligne pour tests/démo). Chaîne de repli : modèle de la fiche → modèle par défaut → `fallback_chain`. Repli automatique sur quota (429), erreur serveur, fournisseur injoignable ou clé absente ; chaque repli est journalisé. Comptage tokens et euros (prix par million de tokens dans `config.yaml`). Appel abandonné en < 0,1 s si l'arrêt d'urgence est déclenché.
+- `budget.py` : contrôle **avant** chaque dépense (plafond mensuel, budget du jour de l'agent, enveloppe mensuelle de l'équipe du Responsable) ; les modèles gratuits restent utilisables au-delà du plafond (dépense nulle) ; alerte `budget_80` et `budget_100` (une fois par mois) ; dépenses externes réservées aux Responsables/Chef/Propriétaire ; revenus (micro-entreprise) ; synthèse par agent, par modèle, par jour.
+- `runtime/sandbox.py` : conteneur jetable `orchestra-runtime` (`--network none --read-only --cap-drop ALL --security-opt no-new-privileges --user 1000:1000 --cpus --memory --pids-limit`, un seul volume `/work`, délai maximal) ; repli en sous-processus signalé (`isolation=degradee` + alerte).
+- `runtime/runner.py` : la fiche est relue **à chaque tâche** (contexte + instructions + règles communes §13 + skills pertinents + apprentissages récents) ; boucle d'outils JSON ; chaque outil contrôlé par la fiche (`tool.use`) ; sorties d'outils encadrées comme **données** ; détection de consignes suspectes (injection) → log + alerte ; nombre d'agents simultanés limité (`max_active_agents`) ; activité publiée pour la carte (travail / attente / erreur / gelé).
+- `emergency.py` : gèle toutes les tâches, tue conteneurs et sous-processus, coupe les appels de modèles et les outils externes ; persiste après redémarrage ; reprise réservée au Propriétaire.
+- API : tâches (assigner, suivre, valider), budget (synthèse, dépense, revenu), arrêt d'urgence / reprise.
+
+**Tests exécutés** : `pytest tests/` → 52 réussis (dont 14 pour la phase 3)
+- repli sur quota ; client HTTP (429 → repli, 503, clé absente) ; coûts ; alerte 80 % ; blocage à 100 % sans jamais dépasser le plafond ; budget journalier d'un agent ; dépense externe refusée à un salarié ;
+- instructions modifiées prises en compte à la tâche suivante (version de fiche enregistrée sur la tâche) ;
+- outil hors fiche refusé et journalisé ; injection signalée ;
+- Docker réel : uid 1000, pas de réseau, système de fichiers en lecture seule, délai dépassé ; repli sous-processus ;
+- **arrêt d'urgence : 2 tâches en cours gelées en < 5 s** (mesuré), conteneur Docker en cours tué en < 5 s, reprise refusée au Chef.

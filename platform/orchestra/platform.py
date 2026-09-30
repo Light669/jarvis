@@ -7,6 +7,10 @@ from pathlib import Path
 from orchestra.agents import AgentService
 from orchestra.alerts import AlertService
 from orchestra.audit import AuditLog, verify_chain
+from orchestra.budget import BudgetService
+from orchestra.emergency import EmergencyService
+from orchestra.gateway import LLMGateway
+from orchestra.runtime.runner import Runtime
 from orchestra.config import load_config, load_env
 from orchestra.db import Database
 from orchestra.events import EventBus
@@ -37,14 +41,11 @@ class Platform:
         self.alerts = AlertService(self.db, self.audit, self.bus)
         self.perms = Permissions(self.db, self.audit, self.alerts)
         self.agents = AgentService(self)
-        self._init_services()
-
-    def _init_services(self) -> None:
-        """Services des phases suivantes (branchés ici pour garder un seul point d'assemblage)."""
-        for name in ("_setup_runtime", "_setup_messaging", "_setup_scribe", "_setup_skills"):
-            fn = getattr(self, name, None)
-            if fn:
-                fn()
+        self.emergency = EmergencyService(self)
+        self.budget = BudgetService(self)
+        self.gateway = LLMGateway(self)
+        self.runtime = Runtime(self)
+        self.route_registrars: list = []
 
     # ------------------------------------------------------------------ logs
     def _index_log(self, entry: dict) -> None:
@@ -68,8 +69,4 @@ class Platform:
         return verify_chain(self.logs_dir, tuple(json.loads(head)) if head else None)
 
     def close(self) -> None:
-        for name in ("_stop_services",):
-            fn = getattr(self, name, None)
-            if fn:
-                fn()
         self.db.close()

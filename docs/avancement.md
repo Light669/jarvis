@@ -165,3 +165,20 @@ Ce qui dépend de Windows ne pouvait pas être exécuté dans l'environnement de
 | Notification Windows | onglet Messages → envoyer 31 messages ou `POST /api/emergency/stop` | toast « Orchestra — critique » |
 | Arrêt propre | `.\stop.ps1` | API, notifier et conteneurs arrêtés |
 | Tests sur la machine | `.venv\Scripts\python -m pytest` | tous réussis (le test navigateur est ignoré si Playwright n'est pas installé) |
+
+## MVP testable ✅
+- **`MVP.bat`** (double-clic) → `mvp.ps1` : Python seul prérequis (installation proposée via winget), environnement,
+  dépendances, jeton, coffre, **organisation de démonstration**, API + notifier, navigateur ouvert et connecté ;
+  fermer la fenêtre arrête tout. `-Reinitialiser` repart de zéro. Équivalent Linux/macOS : `mvp.sh`.
+- Tableau de bord **pré-construit** dans le dépôt (`platform/dashboard/dist`) : Node.js n'est plus nécessaire pour tester.
+- **Simulation** (`simulation.py`, bouton dans la barre du haut) : toutes les 4 s, une action réelle via les services
+  (tâche, message autorisé, demande, décision, validation, tentative interdite d'un apprenti, skill). Modèle hors ligne
+  `demo/echo` qui rend compte à son supérieur, avec 1,5 à 3,5 s de « réflexion » pour que la carte s'anime.
+- Correctif visuel : la mini-carte affiche désormais les nœuds.
+
+**Tests exécutés**
+- `tests/test_mvp_simulation.py` (3 tests) : 150 pas de simulation → tâches terminées et validées, comptes rendus,
+  demandes décidées, refus journalisés, apprentissages, aucune erreur, journal intègre ; pause et arrêt d'urgence respectés ; API.
+- Lancement réel de `mvp.sh` depuis une copie vierge du dépôt (création du venv, installation, démo, serveur) puis
+  Chromium : simulation active, agent qui pulse, particule en vol, pause/reprise de la simulation, aucune erreur JS.
+- `mvp.ps1` : analyse syntaxique PowerShell OK ; exécution à valider sur Windows (double-clic sur `MVP.bat`).

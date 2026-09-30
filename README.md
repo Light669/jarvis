@@ -7,7 +7,27 @@ façon infalsifiable** ; le budget est plafonné à **100 €/mois**.
 
 ![Carte des agents](docs/captures/carte.png)
 
-## Démarrage rapide (Windows)
+## Tester le MVP en 2 minutes (Windows)
+
+Seul prérequis : **Python 3.11+** (le lanceur propose de l'installer s'il manque). Pas de Docker, Node, Ollama ni clé API.
+
+1. Téléchargez le dépôt (bouton **Code → Download ZIP** sur GitHub, branche `claude/ecstatic-hamilton-izxg8m`) et
+   décompressez-le, par exemple dans `C:\Orchestra`.
+2. Double-cliquez sur **`MVP.bat`**.
+3. Le navigateur s'ouvre, déjà connecté, sur une **organisation de démonstration** (Chef, 2 Responsables,
+   3 Salariés, 2 Apprentis) animée par la **simulation** : tâches, comptes rendus, demandes, refus de permission…
+
+À essayer : cliquer sur un agent (6 onglets), modifier ses instructions, *Nouvel agent*, page **Demandes**
+(accepter / refuser), **Logs** (recherche, vérification d'intégrité), **Skills**, l'**arrêt d'urgence**, le bouton
+*Simulation en cours* pour mettre en pause, et le dossier `Cerveau` ouvert dans Obsidian (les notes bougent en direct).
+Fermer la fenêtre noire arrête tout. Repartir de zéro : `powershell -ExecutionPolicy Bypass -File mvp.ps1 -Reinitialiser`.
+Linux/macOS : `./mvp.sh`.
+
+> Les agents de la démo utilisent le modèle hors ligne `demo/echo` : ils suivent les vraies règles (permissions,
+> messagerie, journal, coffre) mais ne « pensent » pas. Pour du vrai travail, changez le **Modèle** d'une fiche
+> (`ollama/qwen2.5:7b` après `ollama pull qwen2.5:7b`, ou une API gratuite avec sa clé dans `.env`).
+
+## Démarrage complet (Windows)
 
 ```powershell
 git clone https://github.com/Light669/jarvis.git C:\Orchestra

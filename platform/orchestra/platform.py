@@ -22,6 +22,7 @@ from orchestra.messaging import MessagingService
 from orchestra.redact import Redactor
 from orchestra.scribe.scribe import Scribe
 from orchestra.scribe.writer import VaultWriter
+from orchestra.simulation import SimulationService
 from orchestra.skills import SkillService
 from orchestra.vault import VaultGit, init_vault
 
@@ -57,12 +58,14 @@ class Platform:
         self.scribe = Scribe(self)
         self.skills = SkillService(self)
         self.improvement = ImprovementService(self)
+        self.simulation = SimulationService(self)
         self.route_registrars: list = []
 
     # ------------------------------------------------------------------ tâches de fond
     def background_jobs(self) -> list[tuple[float, str, Callable[[], object]]]:
         return [
             (60, "escalade_demandes", self.messaging.escalate_overdue),
+            (4, "simulation", self.simulation.tick),
             (300, "commit_coffre", lambda: self.git.commit("Synchronisation périodique du coffre")),
             (600, "rapports_amelioration", self.improvement.scheduled),
             (3600, "verification_integrite", self.check_integrity),

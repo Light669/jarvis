@@ -18,6 +18,5 @@ build/
 
 # Node
 node_modules/
-platform/dashboard/dist/
 test-results/
 playwright-report/

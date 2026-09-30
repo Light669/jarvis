@@ -100,9 +100,29 @@ class LLMGateway:
 
 
 def _demo_reply(model: str, messages: list[dict]) -> str:
+    """Modèle hors ligne de démonstration : rend compte à son supérieur, puis termine la tâche.
+
+    Il passe par les vrais outils (donc par les vraies permissions) pour que la carte s'anime.
+    """
     import json
+    import os
+    import random
+    import re
+    import time
+
+    # temps de « réflexion » simulé pour que la carte montre les agents au travail (0 dans les tests)
+    lo, _, hi = os.environ.get("ORCHESTRA_DEMO_DELAY", "1.5-3.5").partition("-")
+    time.sleep(random.uniform(float(lo or 0), float(hi or lo or 0)))
+    system = messages[0]["content"] if messages else ""
     task = next((m["content"] for m in messages if m["role"] == "user"), "")
+    consigne = task.split(":", 1)[-1].split("Messages reçus", 1)[0].strip()[:160]
+    if not any(m["role"] == "assistant" for m in messages):
+        sup = re.search(r"Supérieur : .*?\((agent-\d+)\)", system)
+        dest = sup.group(1) if sup else ("proprietaire" if "Supérieur : le Propriétaire" in system else None)
+        if dest:
+            return json.dumps({"pensee": "je rends compte à mon supérieur", "actions": [{"outil": "envoyer_message", "args": {
+                "a": dest, "sujet": "Compte rendu", "corps": f"Tâche en cours : {consigne}"}}]}, ensure_ascii=False)
     return json.dumps({"pensee": "mode démonstration hors ligne",
-                       "final": f"[démo] Tâche reçue : {task[:200]}",
-                       "apprentissage": "Mode démonstration : brancher Ollama ou une clé API pour un vrai travail."},
+                       "final": f"[démo] Tâche traitée : {consigne}",
+                       "apprentissage": f"Démo : rendre compte au supérieur avant de conclure ({consigne[:60]})."},
                       ensure_ascii=False)

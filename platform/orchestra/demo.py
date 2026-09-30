@@ -36,4 +36,6 @@ def seed(p) -> dict[str, dict]:
     msg.send(agent_actor(appr), prosp["id"], "Question", "Faut-il inclure les auto-entrepreneurs ?")
     msg.request(agent_actor(redac), "acces_outil", "Accès à la recherche web", "Vérifier les sites des prospects avant relance",
                 "Relances plus pertinentes", 0, payload={"outil": "recherche_web"})
+    p.db.set_state("demo", "1")
+    p.simulation.set_active(True)
     return {"chef": chef, "ventes": ventes, "contenu": contenu, "prospecteur": prosp}

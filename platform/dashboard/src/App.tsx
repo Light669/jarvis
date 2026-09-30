@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { Bell, Coins, Inbox, KeyRound, LogOut, Map as MapIcon, OctagonX, Play, ScrollText, Sparkles, Wifi, WifiOff, Zap, ZapOff } from "lucide-react";
+import { Bell, Coins, Inbox, KeyRound, LogOut, Map as MapIcon, OctagonX, Pause, Play, ScrollText, Sparkles, Wifi, WifiOff, Zap, ZapOff } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { Button, Card, Gauge, Input, Modal, cx } from "./components/ui";
 import { api, clearToken, eur, getToken, setToken } from "./lib/api";
@@ -146,6 +146,16 @@ function TopBar() {
           </>
         )}
       </div>
+      <div className="flex items-center gap-2">
+      {overview?.simulation != null && !active && (
+        <Button size="sm" variant={overview.simulation ? "secondary" : "ghost"} data-testid="simulation-toggle"
+          title="Mode démonstration : fait vivre l'organisation (tâches, messages, demandes, refus)"
+          onClick={async () => {
+            try { await api("/api/simulation", { body: { active: !overview.simulation } }); refresh(); } catch (e: any) { toast(e.message, "err"); }
+          }}>
+          {overview.simulation ? <><Pause size={13} /><span className="relative flex w-2 h-2"><span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60 animate-ping" /><span className="relative inline-flex w-2 h-2 rounded-full bg-emerald-400" /></span>Simulation en cours</> : <><Play size={13} />Lancer la simulation</>}
+        </Button>
+      )}
       {active ? (
         <Button variant="primary" loading={busy} onClick={async () => {
           setBusy(true);
@@ -155,6 +165,7 @@ function TopBar() {
       ) : (
         <Button variant="danger" onClick={() => setConfirm(true)} data-testid="emergency-stop"><OctagonX size={15} />Arrêt d'urgence</Button>
       )}
+      </div>
       <Modal open={confirm} onClose={() => setConfirm(false)} title="Arrêt d'urgence">
         <p className="text-sm text-ink-muted">Tous les agents sont gelés immédiatement, les conteneurs arrêtés et tout accès externe coupé. Seul le Propriétaire peut ensuite relancer.</p>
         <div className="flex justify-end gap-2 mt-6">

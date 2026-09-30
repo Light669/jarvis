@@ -211,7 +211,13 @@ def register(app: FastAPI, p, auth) -> None:
                 "emergency": p.emergency.active,
                 "budget": {k: b[k] for k in ("plafond_eur", "depense_eur", "ratio", "alerte_ratio", "bloque")},
                 "alertes_non_lues": int(p.db.scalar("SELECT COUNT(*) FROM alerts WHERE lue=0") or 0),
+                "simulation": p.simulation.active if p.db.get_state("demo") else None,
                 "demandes_en_attente": len(p.messaging.pending())}
+
+    # ------------------------------------------------------------------ simulation (MVP)
+    @app.post("/api/simulation", dependencies=dep)
+    def simulation(body: dict) -> dict:
+        return p.simulation.set_active(bool(body.get("active")))
 
     # ------------------------------------------------------------------ tâches
     @app.post("/api/agents/{agent_id}/tasks", dependencies=dep)

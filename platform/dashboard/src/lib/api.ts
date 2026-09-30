@@ -97,6 +97,7 @@ export interface Overview {
   budget: { plafond_eur: number; depense_eur: number; ratio: number; alerte_ratio: number; bloque: boolean };
   alertes_non_lues: number;
   demandes_en_attente: number;
+  simulation: boolean | null; // null : pas une organisation de démonstration
 }
 
 export const LEVELS: Level[] = ["chef", "responsable", "salarie", "apprenti"];

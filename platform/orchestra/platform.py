@@ -1,8 +1,10 @@
 """Conteneur des services de la plateforme (un seul objet partagé par l'API et les tests)."""
 from __future__ import annotations
 
+import asyncio
 import json
 from pathlib import Path
+from typing import Callable
 
 from orchestra.agents import AgentService
 from orchestra.alerts import AlertService
@@ -15,7 +17,9 @@ from orchestra.config import load_config, load_env
 from orchestra.db import Database
 from orchestra.events import EventBus
 from orchestra.permissions import Permissions
+from orchestra.messaging import MessagingService
 from orchestra.redact import Redactor
+from orchestra.scribe.writer import VaultWriter
 from orchestra.vault import VaultGit, init_vault
 
 
@@ -45,7 +49,30 @@ class Platform:
         self.budget = BudgetService(self)
         self.gateway = LLMGateway(self)
         self.runtime = Runtime(self)
+        self.writer = VaultWriter(self)
+        self.messaging = MessagingService(self)
         self.route_registrars: list = []
+
+    # ------------------------------------------------------------------ tâches de fond
+    def background_jobs(self) -> list[tuple[float, str, Callable[[], object]]]:
+        return [
+            (60, "escalade_demandes", self.messaging.escalate_overdue),
+            (300, "commit_coffre", lambda: self.git.commit("Synchronisation périodique du coffre")),
+        ]
+
+    def start_background(self) -> list[asyncio.Task]:
+        loop = asyncio.get_running_loop()
+
+        async def every(seconds: float, name: str, fn: Callable[[], object]) -> None:
+            while True:
+                await asyncio.sleep(seconds)
+                try:
+                    await asyncio.to_thread(fn)
+                except Exception as e:  # une tâche de fond ne doit jamais arrêter la plateforme
+                    self.audit.record("systeme", "erreur_tache_fond", resultat=f"{name}: {e}", gravite="grave")
+                    self.alerts.raise_("erreur_grave", f"Tâche de fond {name} en erreur : {e}", gravite="grave")
+
+        return [loop.create_task(every(s, n, f)) for s, n, f in self.background_jobs()]
 
     # ------------------------------------------------------------------ logs
     def _index_log(self, entry: dict) -> None:

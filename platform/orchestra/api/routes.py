@@ -70,6 +70,24 @@ class MoneyIn(BaseModel):
     agent_id: str | None = None
 
 
+class MessageIn(BaseModel):
+    a: str
+    sujet: str
+    corps: str
+    thread_id: str | None = None
+    priorite: str = "normale"
+
+
+class RelayIn(BaseModel):
+    a: str
+    commentaire: str = ""
+
+
+class DecideIn(BaseModel):
+    accepter: bool
+    reponse: str = ""
+
+
 def register(app: FastAPI, p, auth) -> None:
     dep = [Depends(auth)]
 
@@ -229,6 +247,39 @@ def register(app: FastAPI, p, auth) -> None:
     @app.post("/api/emergency/resume", dependencies=dep)
     def emergency_resume() -> dict:
         return p.emergency.resume(OWNER)
+
+    # ------------------------------------------------------------------ messages et demandes
+    @app.get("/api/messages", dependencies=dep)
+    def messages(agent_id: str | None = None, thread_id: str | None = None, limit: int = 200) -> list[dict]:
+        if thread_id:
+            return p.messaging.thread(thread_id)
+        if agent_id:
+            return p.messaging.for_agent(agent_id, limit)
+        return p.db.query("SELECT * FROM messages ORDER BY horodatage DESC LIMIT ?", (limit,))
+
+    @app.post("/api/messages", dependencies=dep)
+    def send_message(body: MessageIn) -> dict:
+        return p.messaging.send(OWNER, body.a, body.sujet, body.corps, thread_id=body.thread_id, priorite=body.priorite)
+
+    @app.post("/api/messages/{message_id}/relay", dependencies=dep)
+    def relay(message_id: str, body: RelayIn) -> dict:
+        return p.messaging.relay(OWNER, message_id, body.a, body.commentaire)
+
+    @app.get("/api/requests", dependencies=dep)
+    def requests_(pending: bool = False, agent_id: str | None = None) -> list[dict]:
+        if pending:
+            return p.messaging.pending()
+        if agent_id:
+            return p.messaging.requests_for(agent_id)
+        return p.db.query("SELECT * FROM requests ORDER BY cree_le DESC LIMIT 500")
+
+    @app.post("/api/requests/{request_id}/decide", dependencies=dep)
+    def decide(request_id: str, body: DecideIn) -> dict:
+        return p.messaging.decide(OWNER, request_id, body.accepter, body.reponse)
+
+    @app.post("/api/requests/escalate", dependencies=dep)
+    def escalate_now() -> list[dict]:
+        return p.messaging.escalate_overdue()
 
     for extra in getattr(p, "route_registrars", []):
         extra(app, p, dep)

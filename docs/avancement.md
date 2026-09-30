@@ -46,3 +46,21 @@ Ce qui ne peut être prouvé que sur le PC Windows du Propriétaire est listé d
 - outil hors fiche refusé et journalisé ; injection signalée ;
 - Docker réel : uid 1000, pas de réseau, système de fichiers en lecture seule, délai dépassé ; repli sous-processus ;
 - **arrêt d'urgence : 2 tâches en cours gelées en < 5 s** (mesuré), conteneur Docker en cours tué en < 5 s, reprise refusée au Chef.
+
+## Phase 4 — Messagerie et demandes ✅
+**Livré** (`messaging.py`, `scribe/writer.py`)
+- Règles §7 appliquées par `permissions.can_message` : ligne hiérarchique directe ; pairs du même niveau **et** de la même équipe (les Responsables entre eux) ; sinon refus avec consigne « passer par son supérieur » ; le Chef et le Propriétaire écrivent à tous ; seul le Chef écrit au Propriétaire. **Relais** par le supérieur (avec ses propres droits, trace `relaye_de`).
+- Messages : `id, de, a, sujet, corps, thread_id, priorite, horodatage, statut (envoye/lu/traite)` ; secrets masqués ; événement temps réel (particules sur la carte).
+- Demandes formelles (`acces_outil, budget, aide, validation, skill_equipe, promotion, plateforme`) avec justification, gain attendu, coût ; statut `en_attente / acceptee / refusee / escaladee` ; effets appliqués **avec les droits du décideur** — si le décideur n'en a pas le droit (ex. un Responsable ne peut pas accorder d'outil), la demande est escaladée avec son avis favorable ; les demandes « plateforme » vont directement au Propriétaire, seul habilité à les valider.
+- Escalade automatique toutes les minutes : demande sans réponse depuis `escalation_hours` → niveau supérieur (jusqu'au Propriétaire) + alerte.
+- Anti-boucle : quota de messages par agent et par heure, profondeur maximale d'un fil → blocage + log `boucle_bloquee` + alerte.
+- Copie dans Obsidian : `Messages/<agent>/inbox|sent/`, `Demandes/`, avec frontmatter et `[[wikilinks]]` vers les fiches. Commit Git périodique (5 min).
+- Outils d'agents `envoyer_message` et `faire_demande` branchés sur ces règles.
+- API : messages (liste, fil, envoi, relais), demandes (en attente, décision, escalade immédiate).
+
+**Tests exécutés** : `pytest tests/` → 78 réussis (dont 26 pour la phase 4)
+- matrice de 12 cas de communication (dont apprenti → autre niveau / autre équipe **refusé et journalisé**) ; relais ; seul le Chef écrit au Propriétaire ;
+- un message ne donne aucun droit ; secrets masqués dans la base et le coffre ;
+- demande d'outil : responsable → escalade automatique → Chef → outil accordé ; refus ; escalade après délai (horloge simulée) jusqu'au Propriétaire avec alerte ; demande « plateforme » refusée au Chef ; promotion par demande ;
+- boucle infinie ping-pong bloquée par le quota horaire ; limite de profondeur d'un fil ;
+- outils `envoyer_message` depuis une tâche (autorisé + refusé) ; API.

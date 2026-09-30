@@ -64,3 +64,21 @@ Ce qui ne peut être prouvé que sur le PC Windows du Propriétaire est listé d
 - demande d'outil : responsable → escalade automatique → Chef → outil accordé ; refus ; escalade après délai (horloge simulée) jusqu'au Propriétaire avec alerte ; demande « plateforme » refusée au Chef ; promotion par demande ;
 - boucle infinie ping-pong bloquée par le quota horaire ; limite de profondeur d'un fil ;
 - outils `envoyer_message` depuis une tâche (autorisé + refusé) ; API.
+
+## Phase 5 — Scribe ✅
+**Livré** (`scribe/scribe.py`, `scribe/writer.py`, `vault.py`)
+- **Base → coffre** : chaque création / modification / promotion / archivage réécrit la fiche `Agents/<Niveau>/<nom>.md` (frontmatter §6 + sections Rôle, Contexte, Instructions, Objectif et KPI, Interdits, Journal de bord) ; ligne de liens `[[supérieur]]`, `[[équipe]]`, `[[subordonnés]]` pour que le graphe Obsidian montre l'organisation ; la fiche du supérieur est mise à jour ; promotion = déplacement de la note ; archivage = déplacement dans `Archives/Agents/` (jamais supprimée).
+- **Coffre → base** : surveillance `watchdog` (anti-rebond 0,5 s) ; une fiche modifiée à la main est validée puis appliquée **au nom du Propriétaire** (version +1, log avant/après) ; une nouvelle note dans `Agents/…` crée l'agent (identifiant réécrit dans la note) ; une note invalide est refusée avec alerte ; une fiche supprimée est restaurée (un agent n'est jamais supprimé) ; anti-écho par hash (le Scribe ignore ses propres écritures).
+- **Conflits** : la version du Propriétaire gagne ; la version précédente reste dans l'historique Git.
+- **Git** : un commit par changement de fiche, avec le contenu **capturé au moment du changement** (écrit en arrière-plan via `git fast-import`, donc sans ralentir les agents) ; commit global périodique pour le reste.
+- **Périmètre** : `write_as` / `write_agent_note` n'autorisent un agent que dans son dossier `Agents/<Niveau>/<nom>/` ; lecture : son dossier, son équipe pour un Responsable, tout pour le Chef, zones partagées (Skills, Apprentissages, Modèles).
+- **Mémoire consultable** : index FTS5 du coffre (`/api/search`, outil `chercher_memoire`), filtré par les droits de lecture de l'agent ; réindexation au démarrage.
+- **Journal lisible du jour** `Logs/AAAA-MM-JJ.md` alimenté en direct par le journal infalsifiable.
+- **Décisions** dans `Decisions/` (commit Git).
+
+**Tests exécutés** : `pytest tests/` → 91 réussis (dont 13 pour la phase 5)
+- fiche écrite à la création (frontmatter, sections, wikilinks, fiche du supérieur, commit) ; modification par formulaire → note + commit v2 ;
+- **modification manuelle dans Obsidian** → base mise à jour au nom du Propriétaire, anti-écho, ancienne version récupérable dans Git ;
+- **création d'un agent depuis une note** (modèle de note) ; note invalide refusée + alerte ; fiche supprimée restaurée ; promotion et archivage déplacent les notes ;
+- apprenti : écriture dans son dossier OK, 4 tentatives hors périmètre **refusées et journalisées** ; lecture hors équipe refusée ;
+- recherche plein texte filtrée par droits ; journal lisible du jour ; **surveillance en direct** (modification et création détectées en < 5 s) ; API recherche / historique / lecture de note.

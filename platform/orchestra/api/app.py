@@ -48,6 +48,8 @@ def create_app(root: Path | None = None, platform: Platform | None = None, backg
         yield
         for t in tasks:
             t.cancel()
+        if tasks:
+            p.stop_background()
         p.audit.record("systeme", "arret_api", agent_id=OWNER.id, niveau="proprietaire")
         if platform is None:
             p.close()

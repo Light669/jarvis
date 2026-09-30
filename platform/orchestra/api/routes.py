@@ -281,5 +281,23 @@ def register(app: FastAPI, p, auth) -> None:
     def escalate_now() -> list[dict]:
         return p.messaging.escalate_overdue()
 
+    # ------------------------------------------------------------------ coffre / second cerveau
+    @app.get("/api/search", dependencies=dep)
+    def search(q: str, limit: int = 20, any_term: bool = False) -> list[dict]:
+        return p.scribe.search(q, OWNER, limit, any_term=any_term)
+
+    @app.get("/api/vault/note", dependencies=dep)
+    def read_note(path: str) -> dict:
+        return {"path": path, "contenu": p.scribe.read_as(OWNER, path)}
+
+    @app.post("/api/vault/reindex", dependencies=dep)
+    def reindex() -> dict:
+        return {"notes": p.scribe.reindex()}
+
+    @app.get("/api/agents/{agent_id}/history", dependencies=dep)
+    def agent_history(agent_id: str) -> dict:
+        a = p.agents.get(agent_id)
+        return {"commits": p.git.log(a["vault_path"], 50), "versions": p.agents.versions(agent_id)}
+
     for extra in getattr(p, "route_registrars", []):
         extra(app, p, dep)

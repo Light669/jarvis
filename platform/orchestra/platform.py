@@ -19,6 +19,7 @@ from orchestra.events import EventBus
 from orchestra.permissions import Permissions
 from orchestra.messaging import MessagingService
 from orchestra.redact import Redactor
+from orchestra.scribe.scribe import Scribe
 from orchestra.scribe.writer import VaultWriter
 from orchestra.vault import VaultGit, init_vault
 
@@ -51,6 +52,7 @@ class Platform:
         self.runtime = Runtime(self)
         self.writer = VaultWriter(self)
         self.messaging = MessagingService(self)
+        self.scribe = Scribe(self)
         self.route_registrars: list = []
 
     # ------------------------------------------------------------------ tâches de fond
@@ -72,7 +74,13 @@ class Platform:
                     self.audit.record("systeme", "erreur_tache_fond", resultat=f"{name}: {e}", gravite="grave")
                     self.alerts.raise_("erreur_grave", f"Tâche de fond {name} en erreur : {e}", gravite="grave")
 
+        self.scribe.reindex()
+        self.scribe.start()
         return [loop.create_task(every(s, n, f)) for s, n, f in self.background_jobs()]
+
+    def stop_background(self) -> None:
+        self.scribe.stop()
+        self.git.commit("Arrêt de la plateforme")
 
     # ------------------------------------------------------------------ logs
     def _index_log(self, entry: dict) -> None:
@@ -96,4 +104,6 @@ class Platform:
         return verify_chain(self.logs_dir, tuple(json.loads(head)) if head else None)
 
     def close(self) -> None:
+        self.scribe.stop()
+        self.git.flush()
         self.db.close()

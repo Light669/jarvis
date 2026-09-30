@@ -218,9 +218,9 @@ class MessagingService:
             self.p.agents.update(actor, a["id"], {"budget_jour_eur": float(payload["budget_jour_eur"])}, f"demande {r['id']} acceptée")
             return f"budget journalier porté à {float(payload['budget_jour_eur']):.2f} €"
         if r["type"] == "skill_equipe" and payload.get("skill"):
-            need("skill.publish", None, portee="equipe")
+            need("skill.publish", None, portee=payload.get("portee", "equipe"))
             s = self.p.skills.grant_team_scope(actor, payload["skill"], r["id"])
-            return f"skill « {s['nom']} » autorisé en portée équipe"
+            return f"skill « {s['nom']} » publié en portée {s['portee']}"
         if r["type"] == "promotion" and payload.get("agent_id"):
             need("agent.lifecycle", self.p.agents.get(payload["agent_id"]))
             a = self.p.agents.promote(actor, payload["agent_id"], raison=f"demande {r['id']}")

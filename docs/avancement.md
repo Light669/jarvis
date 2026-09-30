@@ -99,3 +99,25 @@ Ce qui ne peut être prouvé que sur le PC Windows du Propriétaire est listé d
 - `npm run build` (vérification TypeScript stricte + build Vite) : OK.
 - `pytest tests/` → 93 réussis, dont **`tests/e2e/test_dashboard.py`** (Chromium réel + serveur uvicorn réel) : jeton invalide refusé ; carte affichée avec liens entre pairs ; clic sur un agent → modification des instructions → **v2 sur la carte, en base et dans la note Obsidian** ; parcours des 6 onglets ; **création via le formulaire → nœud sur la carte + fiche dans le coffre** ; tâche exécutée ; 5 pages ; **arrêt d'urgence depuis une page quelconque en < 5 s** puis reprise ; actions du tableau de bord journalisées ; aucune erreur JavaScript.
 - Captures : `docs/captures/` (carte, panneau, logs, budget, arrêt d'urgence).
+
+## Phase 7 — Skills et amélioration continue ✅
+**Livré** (`skills.py`, `improvement.py`)
+- **Skills en nombre illimité** (aucune limite de quantité ; seules les ressources sont bornées). Format §11.1 dans `Skills/{agents/<id>,equipes/<responsable>,globaux}/<nom>.md`, versionné (table + Git).
+- **Cycle automatique** : brouillon → **auto-test** (chaque cas `entree/attendu` exécuté dans le conteneur isolé) → **revue du Vérificateur** (contrôles appliqués par le code : aucun secret, aucune consigne suspecte, contenu suffisant, permissions détenues par l'auteur, pas d'appel système/réseau dans le code, pas de doublon) → approuvé et publié dans sa portée.
+- **Portées** : apprenti → `agent` ; salarié → `agent`, et `equipe` via une **demande formelle** créée automatiquement puis acceptée par le Responsable ; Responsable → `equipe`, `global` via le Chef ; Chef → `global`.
+- **Un skill n'accorde jamais de droit** : ses `permissions_requises` doivent être détenues à la création et à chaque utilisation. **Aucun secret** : refus + alerte grave.
+- **Découverte** : avant chaque tâche, les skills pertinents (recherche plein texte) visibles par l'agent sont injectés dans son prompt ; outils `creer_skill` et `utiliser_skill`.
+- **Suivi** : utilisations, taux de réussite (à la validation des tâches), coût moyen, dernier usage ; signalement des skills inefficaces ou inutilisés ; fusion des doublons (le moins utilisé devient `obsolete` avec `fusionne_dans`) ; retrait = `obsolete` + note dans `Archives/Skills/` (jamais supprimé). Modification d'un skill dans Obsidian par le Propriétaire → nouvelle version.
+- **Après chaque tâche** : note d'apprentissage (`Apprentissages/` + base) et ligne dans le **journal de bord** de la fiche (sans créer de nouvelle version).
+- **À chaque validation** : **retour arrière automatique** d'une fiche (si la réussite sur les N tâches après une modification du prompt chute de plus de 15 points par rapport aux N précédentes) et d'un skill (même règle par version) ; alerte + décision consignée ; éligibilité à la promotion (20 tâches, ≥ 85 %) signalée au Responsable (le Chef valide, rien d'automatique) ; échecs répétés sur le même point après correction → alerte + message au Chef.
+- **Chaque jour** (Formateur) : apprentissages récurrents → propositions de skills, skills à améliorer, inutilisés, doublons fusionnés → `Rapports/AAAA-MM-JJ-quotidien.md`.
+- **Chaque semaine** : rétrospective (tâches, réussite, coût, durée moyenne, erreurs, demandes refusées) → décisions **garder / améliorer / retirer** dans `Decisions/` + `Rapports/…-hebdomadaire.md` ; « retirer » reste une proposition.
+- **Garde-fous** : les agents ne modifient que les champs sûrs de leur fiche et leurs propres skills ; aucune mécanique d'amélioration ne touche aux permissions, logs, budget, arrêt d'urgence ou `config.yaml` ; une modification de plateforme reste une demande que seul le Propriétaire valide.
+- API : `/api/skills` (liste filtrable avec statistiques, détail + versions, revue, obsolète), `/api/learnings`, `/api/improvement/daily|weekly`.
+
+**Tests exécutés** : `pytest tests/` → 112 réussis (dont 19 pour la phase 7)
+- cycle complet création → auto-test → revue → publication (ordre vérifié dans le journal) ; auto-test en échec → reste brouillon et invisible ; 30 skills créés par un apprenti ;
+- portées par niveau (refus journalisés) ; **portée équipe via demande → acceptée → réutilisée par un autre agent via la boucle d'outils → statistiques** ; refus hors équipe ;
+- pas de droits accordés, pas de secret (alerte), code réseau refusé par le Vérificateur ; découverte injectée dans le prompt ; création via l'outil d'un agent ;
+- apprentissage + journal de bord sans nouvelle version ; **retour arrière automatique de fiche** (5 réussites → modification → 5 échecs → v1 restaurée, alerte, décision) et absence de retour arrière si les résultats tiennent ; **retour arrière de skill** ;
+- éligibilité à la promotion signalée sans promotion automatique ; échecs répétés après correction ; rapports quotidien et hebdomadaire ; retrait sans suppression ; édition d'un skill dans Obsidian ; API.

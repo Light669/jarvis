@@ -17,10 +17,12 @@ from orchestra.config import load_config, load_env
 from orchestra.db import Database
 from orchestra.events import EventBus
 from orchestra.permissions import Permissions
+from orchestra.improvement import ImprovementService
 from orchestra.messaging import MessagingService
 from orchestra.redact import Redactor
 from orchestra.scribe.scribe import Scribe
 from orchestra.scribe.writer import VaultWriter
+from orchestra.skills import SkillService
 from orchestra.vault import VaultGit, init_vault
 
 
@@ -53,6 +55,8 @@ class Platform:
         self.writer = VaultWriter(self)
         self.messaging = MessagingService(self)
         self.scribe = Scribe(self)
+        self.skills = SkillService(self)
+        self.improvement = ImprovementService(self)
         self.route_registrars: list = []
 
     # ------------------------------------------------------------------ tâches de fond
@@ -60,6 +64,7 @@ class Platform:
         return [
             (60, "escalade_demandes", self.messaging.escalate_overdue),
             (300, "commit_coffre", lambda: self.git.commit("Synchronisation périodique du coffre")),
+            (600, "rapports_amelioration", self.improvement.scheduled),
         ]
 
     def start_background(self) -> list[asyncio.Task]:

@@ -311,6 +311,45 @@ def register(app: FastAPI, p, auth) -> None:
         a = p.agents.get(agent_id)
         return {"commits": p.git.log(a["vault_path"], 50), "versions": p.agents.versions(agent_id)}
 
+    # ------------------------------------------------------------------ skills et amélioration
+    @app.get("/api/skills", dependencies=dep)
+    def skills(agent_id: str | None = None, portee: str | None = None, statut: str | None = None) -> list[dict]:
+        return p.skills.list(agent_id, portee, statut)
+
+    @app.post("/api/skills", dependencies=dep)
+    def create_skill(body: dict) -> dict:
+        return p.skills.create(OWNER, body)
+
+    @app.get("/api/skills/{skill_id}", dependencies=dep)
+    def get_skill(skill_id: str) -> dict:
+        s = p.skills.get(skill_id)
+        s["versions"] = p.skills.versions(s["id"])
+        return s
+
+    @app.post("/api/skills/{skill_id}/review", dependencies=dep)
+    def review_skill(skill_id: str) -> dict:
+        s = p.skills.get(skill_id)
+        p.skills._pipeline(s["id"], OWNER)
+        return p.skills.get(s["id"])
+
+    @app.post("/api/skills/{skill_id}/obsolete", dependencies=dep)
+    def obsolete_skill(skill_id: str, body: Reason | None = None) -> dict:
+        return p.skills.obsolete(OWNER, skill_id, (body.raison if body else "") or "retiré par le Propriétaire")
+
+    @app.get("/api/learnings", dependencies=dep)
+    def learnings(agent_id: str | None = None, limit: int = 100) -> list[dict]:
+        if agent_id:
+            return p.db.query("SELECT * FROM learnings WHERE agent_id=? ORDER BY id DESC LIMIT ?", (agent_id, limit))
+        return p.db.query("SELECT * FROM learnings ORDER BY id DESC LIMIT ?", (limit,))
+
+    @app.post("/api/improvement/{job}", dependencies=dep)
+    def run_job(job: str) -> dict:
+        if job == "daily":
+            return {"rapport": p.improvement.daily()}
+        if job == "weekly":
+            return {"rapport": p.improvement.weekly()}
+        raise OrchestraError("tâche inconnue")
+
     for extra in getattr(p, "route_registrars", []):
         extra(app, p, dep)
 

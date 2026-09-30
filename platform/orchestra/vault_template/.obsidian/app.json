@@ -1,0 +1,7 @@
+{
+  "newFileLocation": "folder",
+  "newFileFolderPath": "Agents",
+  "attachmentFolderPath": "Archives",
+  "userIgnoreFilters": [".git/"],
+  "showFrontmatter": true
+}

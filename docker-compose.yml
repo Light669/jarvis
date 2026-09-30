@@ -1,0 +1,19 @@
+# Orchestra — Docker ne sert qu'au runtime ISOLÉ des agents et des skills.
+# L'API, le Scribe et le Gateway tournent sur l'hôte (voir docs/decisions.md).
+# Les conteneurs d'exécution sont lancés à la demande par la plateforme avec :
+#   --network none --read-only --cap-drop ALL --security-opt no-new-privileges
+#   --user 1000:1000 --cpus/--memory/--pids-limit, un seul volume de travail.
+name: orchestra
+services:
+  runtime:
+    build:
+      context: ./platform/sandbox_image
+    image: orchestra-runtime:latest
+    network_mode: none
+    read_only: true
+    user: "1000:1000"
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    labels:
+      orchestra.sandbox: "1"
+    profiles: ["build-only"]   # jamais démarré en service permanent

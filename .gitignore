@@ -1,0 +1,23 @@
+# Secrets
+.env
+
+# Données d'exécution (générées localement)
+data/*
+!data/.gitkeep
+logs/*
+!logs/.gitkeep
+Cerveau/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+.pytest_cache/
+build/
+
+# Node
+node_modules/
+platform/dashboard/dist/
+test-results/
+playwright-report/

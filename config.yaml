@@ -1,0 +1,97 @@
+# ============================================================
+#  Orchestra — configuration modifiable par le Propriétaire
+#  (les agents n'ont AUCUN droit d'écriture sur ce fichier)
+# ============================================================
+
+server:
+  host: 127.0.0.1          # ne jamais exposer hors de la machine
+  port: 8765
+
+paths:
+  vault: Cerveau           # coffre Obsidian (second cerveau)
+  data: data               # base SQLite
+  logs: logs               # journaux jsonl chaînés par hash
+
+budget:
+  monthly_eur: 100.0       # plafond dur mensuel
+  alert_ratio: 0.8         # alerte à 80 %
+  default_agent_daily_eur: 0.50
+
+hierarchy:
+  promotion:
+    min_validated_tasks: 20
+    min_success_rate: 0.85
+  demotion:
+    repeated_failures: 2   # échecs répétés sur le même point après correction
+
+messaging:
+  max_thread_depth: 20             # messages max dans un même fil
+  max_messages_per_agent_per_hour: 30
+  escalation_hours: 24             # demande sans réponse -> escalade
+
+improvement:
+  rollback_window_tasks: 5         # N tâches évaluées après une modification
+  rollback_min_drop: 0.15          # baisse du taux de réussite déclenchant le retour arrière
+  skill_min_success_rate: 0.6      # en dessous : skill signalé
+  skill_unused_days: 30            # inutilisé depuis N jours : skill signalé
+
+runtime:
+  prefer_docker: true
+  image: orchestra-runtime:latest
+  cpus: 1.0
+  memory: 512m
+  pids_limit: 128
+  timeout_s: 120
+  max_active_agents: 3             # ajusté par detect.ps1 selon la machine
+  max_steps_per_task: 8
+
+llm:
+  default_model: ollama/qwen2.5:7b
+  # ordre de repli : local d'abord, puis API gratuites, puis payant
+  fallback_chain:
+    - ollama/qwen2.5:7b
+    - groq/llama-3.1-8b-instant
+    - gemini/gemini-2.0-flash
+    - openrouter/meta-llama/llama-3.3-70b-instruct:free
+    - mistral/mistral-small-latest
+  max_output_tokens: 1024
+  providers:
+    ollama:
+      base_url: http://127.0.0.1:11434/v1
+      external: false
+      price_in_per_mtok_eur: 0.0
+      price_out_per_mtok_eur: 0.0
+    groq:
+      base_url: https://api.groq.com/openai/v1
+      api_key_env: GROQ_API_KEY
+      external: true
+      price_in_per_mtok_eur: 0.0
+      price_out_per_mtok_eur: 0.0
+    gemini:
+      base_url: https://generativelanguage.googleapis.com/v1beta/openai
+      api_key_env: GEMINI_API_KEY
+      external: true
+      price_in_per_mtok_eur: 0.0
+      price_out_per_mtok_eur: 0.0
+    openrouter:
+      base_url: https://openrouter.ai/api/v1
+      api_key_env: OPENROUTER_API_KEY
+      external: true
+      price_in_per_mtok_eur: 0.0
+      price_out_per_mtok_eur: 0.0
+    mistral:
+      base_url: https://api.mistral.ai/v1
+      api_key_env: MISTRAL_API_KEY
+      external: true
+      price_in_per_mtok_eur: 0.10
+      price_out_per_mtok_eur: 0.30
+
+alerts:
+  windows_toast: true
+  email:
+    enabled: false          # canal optionnel, désactivé par défaut
+    smtp_host: ""
+    smtp_port: 587
+    from_addr: ""
+    to_addr: ""
+    password_env: SMTP_PASSWORD

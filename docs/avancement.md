@@ -121,3 +121,47 @@ Ce qui ne peut être prouvé que sur le PC Windows du Propriétaire est listé d
 - pas de droits accordés, pas de secret (alerte), code réseau refusé par le Vérificateur ; découverte injectée dans le prompt ; création via l'outil d'un agent ;
 - apprentissage + journal de bord sans nouvelle version ; **retour arrière automatique de fiche** (5 réussites → modification → 5 échecs → v1 restaurée, alerte, décision) et absence de retour arrière si les résultats tiennent ; **retour arrière de skill** ;
 - éligibilité à la promotion signalée sans promotion automatique ; échecs répétés après correction ; rapports quotidien et hebdomadaire ; retrait sans suppression ; édition d'un skill dans Obsidian ; API.
+
+## Phase 8 — Sécurité, alertes et recette ✅
+**Livré**
+- `platform/notifier/notifier.py` : notifications Windows (win11toast, ou WinRT via PowerShell sans dépendance) pour chaque alerte « attention », « grave » ou « critique » ; reconnexion automatique ; lancé et arrêté par `start.ps1` / `stop.ps1`.
+- Canal e-mail optionnel (SMTP, désactivé par défaut) pour les alertes graves et critiques.
+- Vérification d'intégrité des logs au démarrage puis toutes les heures (alerte critique) ; test hebdomadaire automatique de l'arrêt d'urgence (+ `POST /api/emergency/self-test`).
+- Durcissement : protection *DNS rebinding*, aucun CORS, journal d'accès HTTP désactivé, estimation de coût prudente, messages reçus fournis aux agents comme **données** (injections signalées).
+- **Faille grave trouvée et corrigée** : une note écrite par un agent dans son dossier aurait pu être importée comme fiche du Propriétaire (voir `docs/securite.md`).
+- Port lu dans `config.yaml` par les scripts de lancement et d'arrêt.
+- Documentation : `README.md`, `docs/guide_utilisateur.md`, `docs/architecture.md`, `docs/securite.md`.
+
+**Tests exécutés** : `pytest` → **135 réussis** (dont 11 de sécurité et 12 de recette).
+
+## Recette — critères d'acceptation §14
+Chaque critère a son test dans `tests/e2e/test_acceptance.py` (exécuté dans cette session : 12/12 réussis).
+
+| # | Critère | Preuve | Résultat |
+|---|---|---|---|
+| 1 | Lancement en une commande, arrêt propre | `test_01` : `start.sh` sur une copie vierge (jeton généré, coffre, base, API, notifier) puis `stop.sh` (API arrêtée, arrêt journalisé). `start.ps1`/`stop.ps1` : mêmes étapes, syntaxe validée par PowerShell 7.4 | ✅ (Linux) / à valider sous Windows |
+| 2 | Création depuis le formulaire **et** depuis une note Obsidian | `test_02` + test navigateur | ✅ |
+| 3 | Modification contexte/instructions → version, commit, log, tâche suivante | `test_03` + test navigateur | ✅ |
+| 4 | Apprenti refusé (autre niveau, hors dossier) et journalisé | `test_04` | ✅ |
+| 5 | Demande : circulation animée, acceptée/refusée, escaladée, copiée dans Obsidian | `test_05` | ✅ |
+| 6 | Pairs en direct ; boucle infinie bloquée | `test_06` | ✅ |
+| 7 | Skill : auto-test, revue, publication, réutilisation, statistiques | `test_07` | ✅ |
+| 8 | Altération manuelle d'un log détectée | `test_08` (API + CLI `verify-logs`) | ✅ |
+| 9 | Blocage au-delà de 100 €, alerte à 80 % | `test_09` | ✅ |
+| 10 | Arrêt d'urgence < 5 s | `test_10` (3 tâches gelées, mesuré) + navigateur + conteneur Docker tué | ✅ |
+| 11 | Dégradation simulée → retour arrière automatique | `test_11` | ✅ |
+| 12 | Aucun secret dans les logs ni le coffre (recherche automatique) | `test_12` (+ CLI `scan-secrets`) | ✅ |
+
+## À valider par le Propriétaire (sur le PC Windows)
+Ce qui dépend de Windows ne pouvait pas être exécuté dans l'environnement de construction (conteneur Linux) :
+
+| À vérifier | Commande | Attendu |
+|---|---|---|
+| Détection de la machine | `.\detect.ps1 -Apply` | tableau des prérequis + `docs\machine.md` + modèle conseillé dans `config.yaml` |
+| Installation des prérequis | `.\detect.ps1 -Install` | winget installe ce qui manque |
+| Lancement complet | `.\start.ps1` | navigateur ouvert, connecté, carte vide avec « Créer le Chef d'Orchestre » |
+| Isolation Docker Desktop | carte → agent avec l'outil `executer_code` → tâche « calcule 2+2 en Python » ; puis page Logs, filtre `action` | `isolation: docker` dans les détails (sinon Docker Desktop n'est pas démarré) |
+| Modèle local sur GPU | fiche d'un agent avec `ollama/qwen2.5:7b` → confier une tâche | réponse réelle ; page Budget : coût 0 € |
+| Notification Windows | onglet Messages → envoyer 31 messages ou `POST /api/emergency/stop` | toast « Orchestra — critique » |
+| Arrêt propre | `.\stop.ps1` | API, notifier et conteneurs arrêtés |
+| Tests sur la machine | `.venv\Scripts\python -m pytest` | tous réussis (le test navigateur est ignoré si Playwright n'est pas installé) |

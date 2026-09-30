@@ -13,6 +13,7 @@ if ! grep -qE '^ORCHESTRA_TOKEN=\S+' .env; then
   sed -i.bak "s/^ORCHESTRA_TOKEN=.*/ORCHESTRA_TOKEN=$TOKEN/" .env && rm -f .env.bak
 fi
 export PYTHONPATH="$PWD/platform${PYTHONPATH:+:$PYTHONPATH}"
+PORT=$($PY -c "from orchestra.config import load_config; print(load_config('.').server.port)")
 $PY -m orchestra init
 if command -v npm >/dev/null && [ ! -f platform/dashboard/dist/index.html ] && [ -f platform/dashboard/package.json ]; then
   (cd platform/dashboard && npm ci --no-audit --no-fund && npm run build)
@@ -22,8 +23,12 @@ if command -v docker >/dev/null && docker info >/dev/null 2>&1; then
 fi
 nohup $PY -m orchestra serve > logs/api.out.txt 2> logs/api.err.txt &
 echo $! > data/orchestra.pid
+if [ -f platform/notifier/notifier.py ]; then
+  nohup $PY platform/notifier/notifier.py > logs/notifier.out.txt 2>&1 &
+  echo $! > data/notifier.pid
+fi
 for i in $(seq 1 40); do
-  if curl -sf http://127.0.0.1:8765/api/health >/dev/null; then break; fi; sleep 0.5
+  if curl -sf http://127.0.0.1:$PORT/api/health >/dev/null; then break; fi; sleep 0.5
 done
-curl -sf http://127.0.0.1:8765/api/health >/dev/null || { echo "L'API ne répond pas (logs/api.err.txt)"; exit 1; }
-echo "Orchestra est lancé : http://127.0.0.1:8765"
+curl -sf http://127.0.0.1:$PORT/api/health >/dev/null || { echo "L'API ne répond pas (logs/api.err.txt)"; exit 1; }
+echo "Orchestra est lancé : http://127.0.0.1:$PORT"

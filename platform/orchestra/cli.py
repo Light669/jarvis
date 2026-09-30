@@ -63,7 +63,9 @@ def main(argv: list[str] | None = None) -> int:
 
         cfg = load_config(root)
         app = create_app(root)
-        uvicorn.run(app, host=cfg.server.host, port=cfg.server.port, log_level="info")
+        # access_log désactivé : le jeton du WebSocket passe dans l'URL et ne doit jamais être journalisé.
+        # Chaque action est de toute façon tracée dans le journal chaîné d'Orchestra.
+        uvicorn.run(app, host=cfg.server.host, port=cfg.server.port, log_level="info", access_log=False)
         return 0
 
     if args.cmd == "verify-logs":

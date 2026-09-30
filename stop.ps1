@@ -20,9 +20,11 @@ function Stop-FromPid($file, $label) {
 # Arrêt gracieux : l'API enregistre l'arrêt dans les logs puis s'arrête.
 $token = $null
 if (Test-Path .env) { $token = ([regex]::Match((Get-Content .env -Raw), '(?m)^ORCHESTRA_TOKEN=(\S+)')).Groups[1].Value }
+$port = 8765
+if (Test-Path .venv\Scripts\python.exe) { try { $port = & .venv\Scripts\python.exe -c "from orchestra.config import load_config; print(load_config('.').server.port)" } catch {} }
 if ($token) {
   try {
-    Invoke-WebRequest -UseBasicParsing -Method Post -Uri http://127.0.0.1:8765/api/system/shutdown `
+    Invoke-WebRequest -UseBasicParsing -Method Post -Uri "http://127.0.0.1:$port/api/system/shutdown" `
       -Headers @{ Authorization = "Bearer $token" } -TimeoutSec 5 | Out-Null
     Start-Sleep -Seconds 2
   } catch {}

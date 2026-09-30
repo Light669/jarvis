@@ -12,6 +12,7 @@ from typing import Any
 
 from fastapi import Depends, FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, JSONResponse
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from orchestra.models import OWNER, OrchestraError
 from orchestra.platform import Platform
@@ -56,6 +57,8 @@ def create_app(root: Path | None = None, platform: Platform | None = None, backg
 
     app = FastAPI(title="Orchestra", version="0.1.0", lifespan=lifespan, docs_url="/api/docs", openapi_url="/api/openapi.json")
     app.state.platform = p
+    # Protection contre le « DNS rebinding » : seuls les noms locaux sont acceptés dans l'en-tête Host.
+    app.add_middleware(TrustedHostMiddleware, allowed_hosts=["127.0.0.1", "localhost", "[::1]", "testserver"])
 
     # --------------------------------------------------------------- sécurité
     def check_token(given: str | None) -> bool:
@@ -96,6 +99,10 @@ def create_app(root: Path | None = None, platform: Platform | None = None, backg
     from orchestra.api import routes
 
     routes.register(app, p, auth)
+
+    @app.post("/api/emergency/self-test", dependencies=[Depends(auth)])
+    def emergency_self_test() -> dict[str, Any]:
+        return p.emergency.self_test()
 
     @app.post("/api/system/shutdown", dependencies=[Depends(auth)])
     async def shutdown() -> dict[str, Any]:

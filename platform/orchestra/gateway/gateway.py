@@ -59,7 +59,8 @@ class LLMGateway:
             if not prov or not prov.available():
                 errors.append(f"{spec}: non configuré")
                 continue
-            estimate = prov.cost(estimate_tokens(" ".join(m["content"] for m in messages)), max_tokens)
+            # estimation prudente (≈ 2,5 caractères par token) pour ne jamais dépasser le plafond
+            estimate = prov.cost(int(sum(len(m["content"]) for m in messages) / 2.5) + 1, max_tokens)
             try:
                 self.p.budget.check(agent, estimate)
             except BudgetExceeded as e:

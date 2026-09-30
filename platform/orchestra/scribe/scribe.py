@@ -199,7 +199,9 @@ class Scribe:
             return "inchangee"  # écriture de la plateforme elle-même (anti-écho)
         try:
             fm, body = parse_note(text)
-            if rel.startswith("Agents/"):
+            # Seules les fiches (Agents/<Niveau>/<fichier>.md) sont des définitions d'agents. Les notes de travail
+            # des agents (Agents/<Niveau>/<nom>/…) ne sont JAMAIS importées comme des actions du Propriétaire.
+            if rel.startswith("Agents/") and rel.count("/") == 2:
                 return self._import_agent(rel, fm, body)
             if rel.startswith("Skills/") and getattr(self.p, "skills", None):
                 return self.p.skills.import_note(rel, fm, body)

@@ -47,5 +47,37 @@ class EmergencyService:
         self.p.bus.publish("emergency", active=False)
         return {"active": False}
 
+    def self_test(self) -> dict:
+        """Test régulier du mécanisme d'arrêt : lance un conteneur factice et vérifie qu'il est tué en < 5 s,
+        sans geler les agents."""
+        import threading as _t
+
+        sb = self.p.runtime.sandbox
+        be = sb.backend()
+        res: dict = {}
+        th = _t.Thread(target=lambda: res.setdefault("r", be.run("import time\ntime.sleep(60)", timeout=60)), daemon=True)
+        th.start()
+        time.sleep(1.5)  # laisser démarrer le conteneur
+        t0 = time.monotonic()
+        killed = sb.kill_all()
+        th.join(10)
+        elapsed = time.monotonic() - t0
+        ok = bool(killed) and not th.is_alive() and elapsed < 5
+        self.p.db.set_state("emergency_last_test", now_iso())
+        self.p.audit.record("urgence", "test_arret", agent_id="systeme", niveau="systeme", resultat="ok" if ok else "echec",
+                            gravite="info" if ok else "critique", details={"duree_s": round(elapsed, 3), "isolation": be.isolation})
+        if not ok:
+            self.p.alerts.raise_("arret_urgence_defaillant", "Le test périodique de l'arrêt d'urgence a échoué", gravite="critique")
+        return {"ok": ok, "duree_s": round(elapsed, 3), "isolation": be.isolation}
+
+    def scheduled_self_test(self) -> None:
+        import datetime as _dt
+
+        from orchestra.models import now
+        last = self.p.db.get_state("emergency_last_test")
+        if self.active or (last and now() - _dt.datetime.fromisoformat(last) < _dt.timedelta(days=7)):
+            return
+        self.self_test()
+
     def wait(self, timeout: float) -> bool:
         return self._flag.wait(timeout)

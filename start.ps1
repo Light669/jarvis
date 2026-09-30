@@ -79,6 +79,8 @@ if (Test-Cmd ollama) {
   catch { Write-Host '> Démarrage d''Ollama' -ForegroundColor Cyan; Start-Process ollama -ArgumentList 'serve' -WindowStyle Hidden }
 }
 
+$port = & $venvPy -c "from orchestra.config import load_config; print(load_config('.').server.port)"
+
 # 7. API (FastAPI + Scribe + planificateur) et notifier
 Write-Host '> Démarrage de l''API Orchestra' -ForegroundColor Cyan
 $api = Start-Process -FilePath $venvPy -ArgumentList '-m', 'orchestra', 'serve' -WorkingDirectory $root `
@@ -88,15 +90,15 @@ $api.Id | Set-Content data\orchestra.pid
 $ok = $false
 for ($i = 0; $i -lt 40; $i++) {
   Start-Sleep -Milliseconds 500
-  try { Invoke-WebRequest -UseBasicParsing http://127.0.0.1:8765/api/health -TimeoutSec 2 | Out-Null; $ok = $true; break } catch {}
+  try { Invoke-WebRequest -UseBasicParsing http://127.0.0.1:$port/api/health -TimeoutSec 2 | Out-Null; $ok = $true; break } catch {}
 }
 if (-not $ok) { Write-Host 'L''API ne répond pas : voir logs\api.err.txt' -ForegroundColor Red; exit 1 }
 
 $notif = Start-Process -FilePath $venvPy -ArgumentList (Join-Path $root 'platform\notifier\notifier.py') -WorkingDirectory $root -WindowStyle Hidden -PassThru
 $notif.Id | Set-Content data\notifier.pid
 
-$url = "http://127.0.0.1:8765/#token=$token"
+$url = "http://127.0.0.1:$port/#token=$token"
 Write-Host ''
-Write-Host "Orchestra est lancé : http://127.0.0.1:8765" -ForegroundColor Green
+Write-Host "Orchestra est lancé : http://127.0.0.1:$port" -ForegroundColor Green
 Write-Host "Jeton : voir ORCHESTRA_TOKEN dans .env (le lien ci-dessous le transmet automatiquement)"
 if (-not $NoBrowser) { Start-Process $url }

@@ -45,7 +45,7 @@ class Platform:
         self.bus = EventBus()
         self.audit = AuditLog(self.logs_dir, self.redactor)
         self.audit.listeners.append(self._index_log)
-        self.alerts = AlertService(self.db, self.audit, self.bus)
+        self.alerts = AlertService(self.db, self.audit, self.bus, email_cfg=self.cfg.alerts.email, env=self.env)
         self.perms = Permissions(self.db, self.audit, self.alerts)
         self.agents = AgentService(self)
         self.emergency = EmergencyService(self)
@@ -65,6 +65,8 @@ class Platform:
             (60, "escalade_demandes", self.messaging.escalate_overdue),
             (300, "commit_coffre", lambda: self.git.commit("Synchronisation périodique du coffre")),
             (600, "rapports_amelioration", self.improvement.scheduled),
+            (3600, "verification_integrite", self.check_integrity),
+            (3600, "test_arret_urgence", self.emergency.scheduled_self_test),
         ]
 
     def start_background(self) -> list[asyncio.Task]:
@@ -81,6 +83,7 @@ class Platform:
 
         self.scribe.reindex()
         self.scribe.start()
+        self.check_integrity()
         return [loop.create_task(every(s, n, f)) for s, n, f in self.background_jobs()]
 
     def stop_background(self) -> None:
@@ -103,6 +106,12 @@ class Platform:
         self.db.set_state("audit_head", json.dumps([entry["seq"], entry["hash"]]))
         self.bus.publish("log", entry={k: entry[k] for k in ("seq", "horodatage", "agent_id", "type_evenement",
                                                            "action", "cible", "resultat", "gravite")})
+
+    def check_integrity(self):
+        rep = self.verify_logs()
+        if not rep.ok:
+            self.alerts.raise_("integrite_logs", "Intégrité des logs compromise : " + "; ".join(rep.errors[:3]), gravite="critique")
+        return rep
 
     def verify_logs(self):
         head = self.db.get_state("audit_head")

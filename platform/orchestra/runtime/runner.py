@@ -104,8 +104,19 @@ class Runtime:
         learnings = p.db.query("SELECT texte FROM learnings WHERE agent_id=? ORDER BY id DESC LIMIT 5", (agent["id"],))
         superieur = p.perms.agent(agent["parent_id"])
         system = build_system_prompt(agent, superieur, tools, skills, learnings)
-        messages = [{"role": "system", "content": system},
-                    {"role": "user", "content": f"Tâche {t['id']} :\n{t['consigne']}"}]
+        user = f"Tâche {t['id']} :\n{t['consigne']}"
+        inbox = p.db.query("SELECT * FROM messages WHERE a=? AND statut='envoye' ORDER BY horodatage DESC LIMIT 5", (agent["id"],))
+        if inbox:
+            txt = "\n\n".join(f"De {m['de']} — {m['sujet']} (fil {m['thread_id']}) :\n{m['corps']}" for m in reversed(inbox))
+            if INJECTION_PATTERNS.search(txt):
+                p.audit.record("securite", "injection_signalee", agent_id=agent["id"], niveau=agent["niveau"], cible="messages",
+                               gravite="attention", correlation_id=corr, details={"extrait": txt[:300]})
+                p.alerts.raise_("injection", f"Consigne suspecte dans un message reçu par {agent['nom']}", agent_id=agent["id"])
+                txt = "[ALERTE : un message contient une consigne suspecte, ignorée]\n" + txt
+            user += "\n\nMessages reçus non lus :\n" + wrap_data("messages", txt)
+            for m in inbox:
+                p.db.execute("UPDATE messages SET statut='lu' WHERE id=?", (m["id"],))
+        messages = [{"role": "system", "content": system}, {"role": "user", "content": user}]
         used_skills: list[str] = []
         tokens, cost, final, learning = 0, 0.0, None, ""
         for step in range(p.cfg.runtime.max_steps_per_task):

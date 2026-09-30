@@ -1,0 +1,110 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  font-feature-settings: "cv11", "ss01";
+}
+
+::selection {
+  background: rgba(129, 140, 248, 0.35);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2e2e34 transparent;
+}
+
+/* ---------- Nœuds d'agents : états animés ---------- */
+.agent-node {
+  transition: opacity 300ms ease, border-color 200ms ease, box-shadow 300ms ease, filter 300ms ease;
+}
+.agent-node.st-inactif {
+  opacity: 0.72;
+  filter: saturate(0.4);
+}
+.agent-node.st-travail {
+  border-color: rgba(129, 140, 248, 0.9);
+  animation: pulse-work 1.6s ease-in-out infinite;
+}
+.agent-node.st-attente {
+  border-color: rgba(251, 191, 36, 0.9);
+  box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.35), 0 0 24px rgba(251, 191, 36, 0.18);
+}
+.agent-node.st-erreur {
+  border-color: rgba(239, 68, 68, 0.95);
+  box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.4), 0 0 24px rgba(239, 68, 68, 0.25);
+  animation: shake 0.5s ease-in-out 2;
+}
+.agent-node.st-gele {
+  border-color: rgba(125, 211, 252, 0.8);
+  filter: saturate(0.2) brightness(0.9);
+}
+.agent-node.is-pause {
+  outline: 2px solid rgba(56, 189, 248, 0.9);
+  outline-offset: 3px;
+}
+.agent-node.is-draft {
+  border-style: dashed;
+}
+.agent-node.flash-refus {
+  animation: shake 0.45s ease-in-out 1;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.8);
+}
+
+@keyframes pulse-work {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(129, 140, 248, 0.45), 0 0 18px rgba(129, 140, 248, 0.15);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(129, 140, 248, 0), 0 0 30px rgba(129, 140, 248, 0.35);
+  }
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-4px); }
+  40% { transform: translateX(4px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(3px); }
+}
+
+.react-flow__edge-path {
+  stroke: #3f3f46;
+  stroke-width: 1.5;
+}
+.react-flow__edge.peer .react-flow__edge-path {
+  stroke: #52525b;
+  stroke-dasharray: 5 5;
+}
+.react-flow__attribution {
+  display: none;
+}
+.react-flow__controls-button {
+  background: #18181b !important;
+  border-color: #27272a !important;
+  fill: #a1a1aa !important;
+}
+.react-flow__minimap {
+  background: #111113 !important;
+  border: 1px solid #232327;
+  border-radius: 10px;
+}
+
+/* ---------- Réduire les animations ---------- */
+.reduce-motion *,
+.reduce-motion *::before,
+.reduce-motion *::after {
+  animation: none !important;
+  transition-duration: 0ms !important;
+}

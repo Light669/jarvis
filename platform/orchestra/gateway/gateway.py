@@ -4,7 +4,7 @@ from __future__ import annotations
 import concurrent.futures as cf
 from dataclasses import dataclass
 
-from orchestra.gateway.providers import Completion, OpenAICompatible, Provider, ProviderError, estimate_tokens
+from orchestra.gateway.providers import Completion, MockProvider, OpenAICompatible, Provider, ProviderError, estimate_tokens
 from orchestra.models import BudgetExceeded, EmergencyStop
 
 _POOL = cf.ThreadPoolExecutor(max_workers=8, thread_name_prefix="llm")
@@ -29,6 +29,11 @@ class LLMGateway:
             self.providers[name] = OpenAICompatible(name, pc.base_url, key, pc.external,
                                                     pc.price_in_per_mtok_eur, pc.price_out_per_mtok_eur,
                                                     needs_key=bool(pc.api_key_env))
+
+        # Fournisseur de démonstration hors ligne (gratuit, sans réseau) : `demo/echo`.
+        demo = MockProvider(_demo_reply)
+        demo.name = "demo"
+        self.providers["demo"] = demo
 
     def register(self, provider: Provider) -> None:
         self.providers[provider.name] = provider
@@ -91,3 +96,12 @@ class LLMGateway:
                 if self.p.emergency.active:
                     fut.cancel()
                     raise EmergencyStop("arrêt d'urgence pendant l'appel au modèle")
+
+
+def _demo_reply(model: str, messages: list[dict]) -> str:
+    import json
+    task = next((m["content"] for m in messages if m["role"] == "user"), "")
+    return json.dumps({"pensee": "mode démonstration hors ligne",
+                       "final": f"[démo] Tâche reçue : {task[:200]}",
+                       "apprentissage": "Mode démonstration : brancher Ollama ou une clé API pour un vrai travail."},
+                      ensure_ascii=False)

@@ -220,3 +220,16 @@ def test_openai_compatible_provider(monkeypatch):
     with pytest.raises(ProviderError):
         prov.chat("llama", [{"role": "user", "content": "x"}], 10)
     assert not OpenAICompatible("g", "u", None, True, 0, 0, needs_key=True).available()
+
+
+def test_api_assign_task_route(plat, org):
+    from fastapi.testclient import TestClient
+    from orchestra.api.app import create_app
+    H = {"Authorization": "Bearer test-token-0123456789"}
+    use_mock(plat, org["s1"]["id"])
+    with TestClient(create_app(platform=plat, background=False)) as c:
+        r = c.post(f"/api/agents/{org['s1']['id']}/tasks", json={"consigne": "via l'API"}, headers=H)
+        assert r.status_code == 200, r.text
+        t = plat.runtime.wait(r.json()["id"], 10)
+        assert t["statut"] == "terminee"
+        assert c.post(f"/api/agents/{org['s1']['id']}/pause", json={}, headers=H).json()["statut"] == "pause"

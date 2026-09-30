@@ -82,3 +82,20 @@ Ce qui ne peut être prouvé que sur le PC Windows du Propriétaire est listé d
 - **création d'un agent depuis une note** (modèle de note) ; note invalide refusée + alerte ; fiche supprimée restaurée ; promotion et archivage déplacent les notes ;
 - apprenti : écriture dans son dossier OK, 4 tentatives hors périmètre **refusées et journalisées** ; lecture hors équipe refusée ;
 - recherche plein texte filtrée par droits ; journal lisible du jour ; **surveillance en direct** (modification et création détectées en < 5 s) ; API recherche / historique / lecture de note.
+
+## Phase 6 — Tableau de bord ✅
+**Livré** (`platform/dashboard/`, React 18 + Vite + TypeScript + React Flow 12 + Framer Motion + Tailwind, thème sombre)
+- **Carte animée** : Chef en haut, puis Responsables, Salariés, Apprentis (placement hiérarchique automatique) ; liens hiérarchiques + **liens entre pairs en pointillés** (pairs ayant échangé dans les 7 derniers jours) ; regroupement par équipe ; zoom, déplacement, mini-carte.
+- **États** : pulsation quand l'agent travaille, grisé inactif, orange en attente, rouge en erreur (avec secousse), **contour bleu en pause**, bordure pointillée en brouillon, gelé pendant l'arrêt d'urgence. **Particules** animées le long des liens pour chaque message (indigo), demande (ambre), refus (rouge), acceptation (vert) ; nœud qui tremble lors d'un refus de permission. Animations de création (apparition), promotion (badge qui change) et archivage (fondu). Badge de niveau et **jauge de budget** journalier sur chaque nœud. Option **« Réduire les animations »** (respecte aussi la préférence système).
+- **Panneau latéral** (clic sur un agent), 6 onglets : Fiche (tous les champs modifiables, raison, enregistrement versionné, **restaurer une version**, activer / pause / reprendre / promouvoir / rétrograder / archiver, confier une tâche) ; Activité en direct (état, tâches + validation réussite/échec, flux d'événements) ; Messages et demandes (fils, écrire en tant que Propriétaire) ; Skills ; Historique (commits Git de la fiche + journal) ; Coûts (jour, mois, tokens).
+- **Nouvel agent** : formulaire complet (nom, niveau, supérieur filtré par niveau, modèle, rôle, contexte, instructions, objectif, KPI, outils, coût max/jour, enveloppe d'équipe, skills, interdits).
+- **Pages** : Logs (recherche plein texte, filtres agent / niveau / type / gravité / dates, mise à jour en direct, export CSV, vérification d'intégrité), Budget (jauge avec seuil 80 %, dépensé / reste / revenus, dépenses par jour avec vue tableau, par agent, par modèle, saisie de dépense / revenu), Demandes (en attente avec accepter / refuser, historique, escalade manuelle), Skills, Alertes.
+- **Arrêt d'urgence** visible sur **toutes les pages** (barre du haut, confirmation), bandeau rouge tant qu'il est actif, reprise par le Propriétaire.
+- Sécurité : écran de connexion par jeton ; le jeton arrive par le fragment `#token=` (jamais envoyé au réseau), gardé en `sessionStorage` ; WebSocket authentifié avec reconnexion automatique.
+- Ajouts backend : `/api/overview` (carte en un appel), fournisseur hors ligne `demo/echo`, commande `python -m orchestra demo` (organisation de démonstration).
+- Correctif trouvé par la recette navigateur : la route générique `/api/agents/{id}/{action}` masquait `/tasks` → enregistrée en dernier (test de non-régression ajouté).
+
+**Tests exécutés**
+- `npm run build` (vérification TypeScript stricte + build Vite) : OK.
+- `pytest tests/` → 93 réussis, dont **`tests/e2e/test_dashboard.py`** (Chromium réel + serveur uvicorn réel) : jeton invalide refusé ; carte affichée avec liens entre pairs ; clic sur un agent → modification des instructions → **v2 sur la carte, en base et dans la note Obsidian** ; parcours des 6 onglets ; **création via le formulaire → nœud sur la carte + fiche dans le coffre** ; tâche exécutée ; 5 pages ; **arrêt d'urgence depuis une page quelconque en < 5 s** puis reprise ; actions du tableau de bord journalisées ; aucune erreur JavaScript.
+- Captures : `docs/captures/` (carte, panneau, logs, budget, arrêt d'urgence).

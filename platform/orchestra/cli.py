@@ -25,6 +25,7 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("serve", help="Lance l'API, le Scribe et le planificateur")
     sub.add_parser("verify-logs", help="Vérifie l'intégrité de la chaîne de hash des logs")
     sub.add_parser("scan-secrets", help="Recherche de secrets dans logs/ et Cerveau/")
+    sub.add_parser("demo", help="Crée une organisation de démonstration (base vide uniquement)")
     args = parser.parse_args(argv)
     root = find_root()
 
@@ -40,6 +41,18 @@ def main(argv: list[str] | None = None) -> int:
         p = Platform(root)
         p.close()
         print(f"Orchestra initialisé dans {root}")
+        return 0
+
+    if args.cmd == "demo":
+        from orchestra.demo import seed
+        from orchestra.platform import Platform
+
+        p = Platform(root)
+        try:
+            seed(p)
+        finally:
+            p.close()
+        print("Organisation de démonstration créée (modèle hors ligne demo/echo).")
         return 0
 
     if args.cmd == "serve":

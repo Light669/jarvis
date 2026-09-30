@@ -113,18 +113,6 @@ def register(app: FastAPI, p, auth) -> None:
         raison = changes.pop("raison", None) or "modification par le Propriétaire"
         return p.agents.update(OWNER, agent_id, changes, raison)
 
-    @app.post("/api/agents/{agent_id}/{action}", dependencies=dep)
-    def agent_action(agent_id: str, action: str, body: Reason | None = None) -> dict:
-        body = body or Reason()
-        if action in ("pause", "resume", "activate", "archive"):
-            statut = {"pause": "pause", "resume": "actif", "activate": "actif", "archive": "archive"}[action]
-            return p.agents.set_status(OWNER, agent_id, statut, body.raison)
-        if action == "promote":
-            return p.agents.promote(OWNER, agent_id, body.new_parent_id, body.raison or "promotion par le Propriétaire")
-        if action == "demote":
-            return p.agents.demote(OWNER, agent_id, body.new_parent_id, body.raison or "rétrogradation par le Propriétaire")
-        raise OrchestraError(f"action inconnue : {action}")
-
     @app.get("/api/agents/{agent_id}/versions", dependencies=dep)
     def versions(agent_id: str) -> list[dict]:
         return p.agents.versions(agent_id)
@@ -200,6 +188,30 @@ def register(app: FastAPI, p, auth) -> None:
     @app.get("/api/events/recent", dependencies=dep)
     def recent_events() -> list[dict]:
         return list(p.bus.recent)[-200:]
+
+    # ------------------------------------------------------------------ vue d'ensemble (carte)
+    @app.get("/api/overview", dependencies=dep)
+    def overview() -> dict:
+        agents = p.agents.list(include_archived=True)
+        day = {r["agent_id"]: r["eur"] for r in p.db.query(
+            "SELECT agent_id, SUM(montant_eur) eur FROM budget_entries WHERE kind IN ('llm','depense') AND horodatage>=? GROUP BY agent_id",
+            (p.budget._day_start(),))}
+        for a in agents:
+            a["jour_eur"] = round(day.get(a["id"], 0.0), 4)
+            a["equipe"] = p.perms.team_root(a["id"])
+        by_id = {a["id"]: a for a in agents}
+        peers = set()
+        for m in p.db.query("SELECT DISTINCT de, a FROM messages WHERE de LIKE 'agent-%' AND a LIKE 'agent-%' "
+                            "AND horodatage>=datetime('now','-7 days')"):
+            x, y = by_id.get(m["de"]), by_id.get(m["a"])
+            if x and y and x.get("parent_id") != y["id"] and y.get("parent_id") != x["id"]:
+                peers.add(tuple(sorted((x["id"], y["id"]))))
+        b = p.budget.summary()
+        return {"agents": agents, "pairs": [list(t) for t in sorted(peers)],
+                "emergency": p.emergency.active,
+                "budget": {k: b[k] for k in ("plafond_eur", "depense_eur", "ratio", "alerte_ratio", "bloque")},
+                "alertes_non_lues": int(p.db.scalar("SELECT COUNT(*) FROM alerts WHERE lue=0") or 0),
+                "demandes_en_attente": len(p.messaging.pending())}
 
     # ------------------------------------------------------------------ tâches
     @app.post("/api/agents/{agent_id}/tasks", dependencies=dep)
@@ -301,3 +313,17 @@ def register(app: FastAPI, p, auth) -> None:
 
     for extra in getattr(p, "route_registrars", []):
         extra(app, p, dep)
+
+    # route générique enregistrée EN DERNIER pour ne pas masquer /tasks, /costs, /history…
+    @app.post("/api/agents/{agent_id}/{action}", dependencies=dep)
+    def agent_action(agent_id: str, action: str, body: Reason | None = None) -> dict:
+        body = body or Reason()
+        if action in ("pause", "resume", "activate", "archive"):
+            statut = {"pause": "pause", "resume": "actif", "activate": "actif", "archive": "archive"}[action]
+            return p.agents.set_status(OWNER, agent_id, statut, body.raison)
+        if action == "promote":
+            return p.agents.promote(OWNER, agent_id, body.new_parent_id, body.raison or "promotion par le Propriétaire")
+        if action == "demote":
+            return p.agents.demote(OWNER, agent_id, body.new_parent_id, body.raison or "rétrogradation par le Propriétaire")
+        raise OrchestraError(f"action inconnue : {action}")
+

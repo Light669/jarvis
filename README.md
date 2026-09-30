@@ -9,18 +9,20 @@ façon infalsifiable** ; le budget est plafonné à **100 €/mois**.
 
 ## Tester le MVP en 2 minutes (Windows)
 
-Seul prérequis : **Python 3.11+** (le lanceur propose de l'installer s'il manque). Pas de Docker, Node, Ollama ni clé API.
+**Aucun prérequis** : si Python n'est pas installé, le lanceur télécharge un Python portable dans le dossier
+(sans installation, sans droits administrateur). Pas de Docker, Node, Ollama ni clé API.
 
-1. Téléchargez le dépôt (bouton **Code → Download ZIP** sur GitHub, branche `claude/ecstatic-hamilton-izxg8m`) et
-   décompressez-le, par exemple dans `C:\Orchestra`.
-2. Double-cliquez sur **`MVP.bat`**.
-3. Le navigateur s'ouvre, déjà connecté, sur une **organisation de démonstration** (Chef, 2 Responsables,
-   3 Salariés, 2 Apprentis) animée par la **simulation** : tâches, comptes rendus, demandes, refus de permission…
+1. Téléchargez **Orchestra-MVP.zip** puis **décompressez-le** : clic droit → *Extraire tout…*
+   (ne lancez pas le fichier depuis l'aperçu du ZIP).
+2. Dans le dossier extrait `Orchestra`, double-cliquez sur **`MVP.bat`**.
+   Si Windows affiche « Windows a protégé votre ordinateur » : *Informations complémentaires* → *Exécuter quand même*.
+3. Premier lancement : 1 à 3 minutes. Le navigateur s'ouvre ensuite, déjà connecté, sur l'organisation de
+   démonstration animée par la **simulation**. Un raccourci **Orchestra** est créé sur le Bureau pour les fois suivantes.
+4. Fermer la fenêtre noire arrête tout. En cas de problème, envoyez le fichier **`mvp-diagnostic.txt`** du dossier.
 
-À essayer : cliquer sur un agent (6 onglets), modifier ses instructions, *Nouvel agent*, page **Demandes**
-(accepter / refuser), **Logs** (recherche, vérification d'intégrité), **Skills**, l'**arrêt d'urgence**, le bouton
-*Simulation en cours* pour mettre en pause, et le dossier `Cerveau` ouvert dans Obsidian (les notes bougent en direct).
-Fermer la fenêtre noire arrête tout. Repartir de zéro : `powershell -ExecutionPolicy Bypass -File mvp.ps1 -Reinitialiser`.
+À essayer : cliquer sur un agent (6 onglets), modifier ses instructions, *Nouvel agent*, page **Demandes**,
+**Logs** (vérification d'intégrité), **Skills**, l'**arrêt d'urgence**, le bouton *Simulation en cours*, et le dossier
+`Cerveau` ouvert dans Obsidian. Repartir de zéro : `powershell -ExecutionPolicy Bypass -File mvp.ps1 -Reinitialiser`.
 Linux/macOS : `./mvp.sh`.
 
 > Les agents de la démo utilisent le modèle hors ligne `demo/echo` : ils suivent les vraies règles (permissions,

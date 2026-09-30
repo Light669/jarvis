@@ -76,7 +76,7 @@ def test_agent_template_frontmatter_parses():
 
 @pytest.mark.skipif(not shutil.which("pwsh"), reason="PowerShell absent")
 def test_powershell_scripts_parse():
-    for s in ["start.ps1", "stop.ps1", "detect.ps1"]:
+    for s in ["start.ps1", "stop.ps1", "detect.ps1", "mvp.ps1"]:
         cmd = ("$e=$null;[System.Management.Automation.Language.Parser]::ParseFile('" + str(REPO / s)
                + "',[ref]$null,[ref]$e)|Out-Null;if($e){$e;exit 1}")
         assert subprocess.run(["pwsh", "-NoProfile", "-Command", cmd]).returncode == 0, s

@@ -5,6 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Créapilot</title>
 <meta name="claude:viewport-fit-sides" content="cover">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#22152F">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Créapilot">
+<link rel="icon" type="image/png" href="assets/icon-192.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..800&family=Figtree:wght@400;500;600;700&display=swap">
 <style>
@@ -304,14 +312,43 @@ textarea { resize: vertical; }
 .toast button { border: none; background: none; color: var(--bg); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; padding: 0; }
 
 @media (max-width: 1180px) { .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } .row-a, .row-b, .ship-grid { grid-template-columns: minmax(0, 1fr); } }
+/* Appli installable et téléphone */
+.side-toggle { display: none; align-items: center; gap: 6px; border: 1px solid rgba(255,255,255,.2); background: transparent; color: #F3EEF8; border-radius: 10px; padding: 8px 12px; font-weight: 600; font-size: 14px; }
+.stage-chips { display: none; gap: 8px; overflow-x: auto; padding-bottom: 2px; }
+.stage-chips button { flex: none; display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 8px 12px; font-size: 13px; font-weight: 600; min-height: 40px; }
+.install { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 14px; border-color: var(--accent); }
+.install img { width: 44px; height: 44px; border-radius: 12px; }
+.install p { flex: 1; min-width: 200px; }
+.install div { display: flex; gap: 8px; }
+
 @media (max-width: 860px) {
+  body { padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px)); }
   .app { grid-template-columns: minmax(0, 1fr); gap: 16px; }
-  .side { position: static; min-height: 0; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 12px; padding: 12px; border-radius: 18px; }
-  .nav { flex-direction: row; flex: 1; justify-content: flex-end; }
-  .nav button { padding: 9px 10px; }
-  .side-card, .side-foot { display: none; }
+  .side { position: static; min-height: 0; flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border-radius: 18px; }
+  .side-toggle { display: inline-flex; }
+  .side-card, .side-foot { display: none; width: 100%; }
+  .side.open .side-card, .side.open .side-foot { display: flex; }
+  .side-foot { margin-top: 0; }
+  .nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 15; flex-direction: row; justify-content: space-around; gap: 2px; background: var(--aubergine); padding: 8px max(8px, env(safe-area-inset-right, 0px)) calc(8px + env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px)); box-shadow: 0 -6px 20px rgba(0,0,0,.2); }
+  .nav button { flex: 1; min-width: 0; flex-direction: column; justify-content: center; gap: 3px; padding: 6px 2px; font-size: 11px; position: relative; min-height: 54px; text-align: center; }
+  .nav .label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+  .nav .badge { position: absolute; top: 2px; left: calc(50% + 6px); margin: 0; font-size: 11px; padding: 0 6px; }
+  .toast { bottom: calc(100px + env(safe-area-inset-bottom, 0px)); max-width: calc(100vw - 32px); }
+  .board { grid-template-columns: repeat(5, 86vw); min-width: 0; }
+  .board-scroll { scroll-snap-type: x mandatory; scroll-padding-left: 0; }
+  .col { scroll-snap-align: start; min-height: 240px; }
+  .stage-chips { display: flex; }
+  .hint-drag { display: none; }
+  .btn-sm { min-height: 40px; }
+  .page-head .head-actions { width: 100%; }
+  dialog { width: 100vw; max-width: 100vw; height: 100dvh; max-height: 100dvh; margin: 0; border-radius: 0; }
+  .dlg { max-height: 100dvh; height: 100%; }
+  .dlg-head { padding-top: calc(16px + env(safe-area-inset-top, 0px)); }
+  .dlg-body { flex: 1; }
+  .dlg-foot { padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)); }
+  .tabs { overflow-x: auto; }
 }
-@media (max-width: 520px) { .kpis { grid-template-columns: minmax(0, 1fr); } .grid2 { grid-template-columns: 1fr; } .f-row { grid-template-columns: 112px minmax(0, 1fr) 36px; } .nav .label { display: none; } }
+@media (max-width: 520px) { .kpis { grid-template-columns: minmax(0, 1fr); } .grid2 { grid-template-columns: 1fr; } .f-row { grid-template-columns: 112px minmax(0, 1fr) 36px; } .kpi-value { font-size: 30px; } }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
@@ -322,6 +359,7 @@ textarea { resize: vertical; }
       <svg width="34" height="34" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="18" fill="#E8264F"/><path d="M42.6 21.4 A15 15 0 1 0 42.6 42.6" fill="none" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round"/><circle cx="47" cy="32" r="4.5" fill="#FFFFFF"/></svg>
       <span class="wordmark">Créapilot<span>.</span></span>
     </div>
+    <button type="button" class="side-toggle" id="side-toggle" aria-expanded="false" aria-controls="side-settings">Réglages</button>
     <nav class="nav" aria-label="Navigation">
       <button type="button" data-view="tableau" aria-current="page">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
@@ -346,7 +384,7 @@ textarea { resize: vertical; }
         <span class="label">Inscrits</span>
       </button>
     </nav>
-    <div class="side-card">
+    <div class="side-card" id="side-settings">
       <p>Tes infos</p>
       <label for="s-brand">Ta marque <input id="s-brand" placeholder="ex. Maison Lune"></label>
       <label for="s-name">Ton prénom <input id="s-name" placeholder="ex. Camille"></label>
@@ -367,6 +405,14 @@ textarea { resize: vertical; }
   </aside>
 
   <main>
+    <div class="panel install" id="install-banner" hidden>
+      <img src="assets/icon-192.png" alt="" width="44" height="44">
+      <p id="install-text">Installe Créapilot sur ton téléphone pour l’ouvrir en un geste.</p>
+      <div>
+        <button class="btn btn-primary btn-sm" type="button" id="install-go">Installer</button>
+        <button class="btn btn-ghost btn-sm" type="button" id="install-later">Plus tard</button>
+      </div>
+    </div>
     <section class="view" id="view-tableau" aria-label="Tableau de bord">
       <header class="page-head">
         <div>
@@ -467,8 +513,9 @@ textarea { resize: vertical; }
           <select id="flt-prod" aria-label="Filtrer par produit"></select>
           <label class="chk" for="flt-alert"><input type="checkbox" id="flt-alert"> À relancer seulement</label>
         </div>
-        <span class="hint">Glisse une carte vers une autre colonne, ou clique sur « Suivant ».</span>
+        <span class="hint hint-drag">Glisse une carte vers une autre colonne, ou clique sur « Suivant ».</span>
       </div>
+      <div class="stage-chips" id="stage-chips" aria-label="Aller à une étape"></div>
       <div class="board-empty" id="board-empty" hidden>
         <div><b>Aucun créateur pour l’instant</b><p>Importe ta liste depuis Excel ou Google Sheets, ou ajoute ton premier créateur à la main.</p></div>
         <div class="head-actions">
@@ -1182,6 +1229,7 @@ textarea { resize: vertical; }
     const q = $('#search').value.trim().toLowerCase(), cat = $('#flt-cat').value, prod = $('#flt-prod').value, onlyAlerts = $('#flt-alert').checked;
     const list = state.creators.filter((c) => (!q || [c.handle, c.product, c.cat, c.notes].join(' ').toLowerCase().includes(q))
       && (!cat || c.cat === cat) && (!prod || c.product === prod) && (!onlyAlerts || alertFor(c)));
+    $('#stage-chips').innerHTML = STAGES.map((s) => `<button type="button" data-chip="${s.id}"><span class="dot" style="background:${s.c}"></span>${s.label} · ${list.filter((c) => c.stage === s.id).length}</button>`).join('');
     $('#board').innerHTML = STAGES.map((s, i) => {
       const cards = list.filter((c) => c.stage === s.id);
       return `<div class="col" data-stage="${s.id}" style="--c:${s.c}">
@@ -1667,6 +1715,40 @@ textarea { resize: vertical; }
   }
   $('#toast-undo').addEventListener('click', () => { const u = toastUndo; toastUndo = null; $('#toast').hidden = true; if (u) u(); });
   let rz; window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { if (!$('#view-tableau').hidden) weeklyChart(weeks()); }, 120); });
+
+  /* ---------- Téléphone : réglages repliables, puces d'étapes, installation ---------- */
+  $('#side-toggle').addEventListener('click', () => {
+    const open = $('.side').classList.toggle('open');
+    $('#side-toggle').setAttribute('aria-expanded', open); $('#side-toggle').textContent = open ? 'Fermer' : 'Réglages';
+  });
+  $('#stage-chips').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-chip]'); if (!b) return;
+    const col = $(`.col[data-stage="${b.dataset.chip}"]`);
+    if (col) col.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', inline: 'start', block: 'nearest' });
+  });
+  let installEvt = null;
+  const standalone = () => window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  const installDismissed = () => { try { return localStorage.getItem('creapilot-install-later') === '1'; } catch (e) { return false; } };
+  function showInstall(mode) {
+    if (standalone() || installDismissed()) return;
+    $('#install-banner').hidden = false;
+    $('#install-go').hidden = mode === 'ios';
+    $('#install-text').textContent = mode === 'ios'
+      ? 'Installe Créapilot sur ton iPhone : touche le bouton Partager de Safari, puis « Sur l’écran d’accueil ».'
+      : 'Installe Créapilot sur ton téléphone ou ton ordinateur pour l’ouvrir en un geste, comme une appli.';
+  }
+  window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); installEvt = e; showInstall('prompt'); });
+  window.addEventListener('appinstalled', () => { $('#install-banner').hidden = true; toast('Créapilot est installé'); });
+  $('#install-go').addEventListener('click', async () => {
+    if (!installEvt) return;
+    installEvt.prompt();
+    try { await installEvt.userChoice; } catch (e) {}
+    installEvt = null; $('#install-banner').hidden = true;
+  });
+  $('#install-later').addEventListener('click', () => { $('#install-banner').hidden = true; try { localStorage.setItem('creapilot-install-later', '1'); } catch (e) {} });
+  const onWeb = location.protocol.startsWith('http') && window.self === window.top;
+  if (onWeb && /iphone|ipad|ipod/i.test(navigator.userAgent) && !standalone()) showInstall('ios');
+  if (onWeb && 'serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 
   function applySettings() { $('#s-brand').value = state.brand || ''; $('#s-name').value = myName(); }
 

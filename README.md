@@ -11,6 +11,7 @@ MVP d’un CRM pour les vendeurs **TikTok Shop** : suivre ses créateurs affili�
 | `index.html` | Page de vente, avec le formulaire « Réserver ma place fondateur » |
 | `app.html` | L’application Créapilot |
 | `brand.html` | Guide de marque (logo, couleurs, typographie, ton) |
+| `manifest.webmanifest`, `sw.js` | Installation sur téléphone et ouverture hors connexion |
 | `config.js` | Clés Supabase partagées par la page de vente et l’application |
 | `supabase/` | Schéma de la base et fonction serveur de rédaction par IA |
 
@@ -29,6 +30,7 @@ MVP d’un CRM pour les vendeurs **TikTok Shop** : suivre ses créateurs affili�
 - **Historique** par créateur, bouton « J’ai envoyé ce message » et annulation de la dernière action.
 - **Colis d’échantillons** : adresse, transporteur, numéro de suivi cliquable, dates d’envoi et de livraison, vue « À envoyer / En route / Livrés », stock d’échantillons par produit (baisse automatique à chaque envoi). L’alerte « Vidéo en retard » part de la date de livraison réelle.
 - **Équipe** (version en ligne) : espace partagé par marque, invitations par e-mail, fusion automatique des modifications faites en même temps, historique signé par chaque membre.
+- **Appli installable** : icône sur l’écran d’accueil (iPhone et Android), ouverture en plein écran, fonctionne avec une connexion faible ; sur téléphone, barre de navigation en bas, colonnes à faire défiler au doigt et fiches en plein écran.
 - **Inscrits** (compte administrateur) : la liste des marques inscrites depuis la page de vente.
 - **Fiche créateur** : catégorie, abonnés, commission, produit, ventes, notes.
 

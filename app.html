@@ -337,6 +337,10 @@ textarea { resize: vertical; }
         <span class="label">Colis</span>
         <span class="badge num" id="ship-badge" hidden>0</span>
       </button>
+      <button type="button" data-view="equipe" id="nav-team" hidden>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"/><circle cx="17" cy="9" r="2.5"/><path d="M17 14.5c2.4 0 4 1.5 4.6 4"/></svg>
+        <span class="label">Équipe</span>
+      </button>
       <button type="button" data-view="inscrits" id="nav-leads" hidden>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 4h16v16H4z"/><path d="m4 6 8 7 8-7"/></svg>
         <span class="label">Inscrits</span>
@@ -351,6 +355,9 @@ textarea { resize: vertical; }
       <div id="cloud-box" hidden style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px">
         <span class="sync" id="sync" data-s="loading">Chargement…</span>
         <span class="account" id="account"></span>
+        <label class="account" for="ws-select" id="ws-wrap" hidden>Espace
+          <select id="ws-select" style="width:100%;margin-top:4px;background:rgba(0,0,0,.25);color:#FFFFFF;border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:6px"></select>
+        </label>
         <button type="button" id="logout">Se déconnecter</button>
       </div>
       <span id="data-note">Données d’exemple, enregistrées dans ce navigateur.</span>
@@ -497,6 +504,32 @@ textarea { resize: vertical; }
         <div class="panel-head"><div><h2>Stock d’échantillons</h2><p>Le stock baisse automatiquement à chaque colis marqué comme envoyé</p></div></div>
         <div class="stock" id="stock"></div>
       </article>
+    </section>
+
+    <section class="view" id="view-equipe" aria-label="Équipe" hidden>
+      <header class="page-head">
+        <div>
+          <p class="eyebrow" id="team-ws-name">Ton espace</p>
+          <h1>Équipe</h1>
+        </div>
+      </header>
+      <div class="row row-b">
+        <article class="panel">
+          <div class="panel-head"><div><h2>Membres</h2><p>Tout le monde voit et modifie les mêmes créateurs, colis et ventes.</p></div></div>
+          <ul class="ship-list" id="team-members"></ul>
+        </article>
+        <article class="panel">
+          <div class="panel-head"><div><h2>Inviter un collègue</h2><p id="team-invite-help">Ton collègue se connecte à Créapilot avec cette adresse e-mail : il rejoint automatiquement ton espace.</p></div></div>
+          <form id="team-form" class="ai-row">
+            <input id="team-email" type="email" placeholder="collegue@ta-marque.fr" aria-label="Adresse e-mail du collègue" required>
+            <button class="btn btn-primary" type="submit" id="team-go">Inviter</button>
+          </form>
+          <p class="hint">Aucun e-mail n’est envoyé automatiquement : envoie-lui le lien de l’application.</p>
+          <button class="btn btn-sm" type="button" id="team-copy-link" style="align-self:flex-start">Copier le lien de l’application</button>
+          <div class="panel-head" style="margin-top:6px"><div><h2 style="font-size:16px">Invitations en attente</h2></div></div>
+          <ul class="ship-list" id="team-invites"></ul>
+        </article>
+      </div>
     </section>
 
     <section class="view" id="view-inscrits" aria-label="Inscrits" hidden>
@@ -714,6 +747,9 @@ textarea { resize: vertical; }
     } catch (e) { /* stockage indisponible : exemples en mémoire */ }
     state = { creators: demo(), stock: demoStock(), brand: '', name: '', demo: true }; usingDemo = true;
   }
+  const myName = () => (session ? ((state.names || {})[session.user.id] || '') : (state.name || ''));
+  function setMyName(v) { if (session) { state.names = state.names || {}; state.names[session.user.id] = v; } else state.name = v; }
+  const author = () => (session ? (myName() || (session.user.email || '').split('@')[0]) : '');
   function save() {
     state.demo = usingDemo;
     try { localStorage.setItem(session ? `${KEY}:${session.user.id}` : KEY, JSON.stringify(state)); } catch (e) {}
@@ -759,22 +795,152 @@ textarea { resize: vertical; }
   async function afterLogin() {
     loaded = true;
     $('#cloud-box').hidden = false; $('#account').textContent = session.user.email || ''; setSync('loading');
-    const { data, error } = await sb.from('app_state').select('data').eq('user_id', session.user.id).maybeSingle();
-    if (error) {
-      // Hors ligne : on reprend la dernière copie gardée sur cet appareil
-      try { const raw = localStorage.getItem(`${KEY}:${session.user.id}`); if (raw) state = JSON.parse(raw); } catch (e) {}
-      setSync('error'); toast('Impossible de charger tes données en ligne pour le moment');
-    } else {
-      state = data && data.data ? data.data : { creators: [], brand: '', name: '', demo: false };
+    try {
+      await sb.rpc('accept_invites');
+      const ok = await loadWorkspace();
+      if (!ok) throw new Error('workspace');
       setSync('ok');
+    } catch (e) {
+      // Hors ligne : on reprend la dernière copie gardée sur cet appareil
+      try { const raw = localStorage.getItem(`${KEY}:${session.user.id}`); if (raw) state = JSON.parse(raw); } catch (err) {}
+      setSync('error'); toast('Impossible de charger ton espace en ligne pour le moment');
     }
     state.creators = state.creators || [];
     usingDemo = !!state.demo;
     const { data: adm } = await sb.from('admins').select('email').maybeSingle();
     isAdmin = !!adm; $('#nav-leads').hidden = !isAdmin;
+    $('#nav-team').hidden = !wsId;
     $('#auth').hidden = true;
     applySettings(); render(); go((location.hash || '').slice(1));
+    startPolling();
   }
+
+  /* ---------- Espaces partagés : chargement, fusion des changements, synchronisation ---------- */
+  let wsId = null, wsRole = 'member', wsName = '', baseVersion = 0, synced = null, pushing = false, pollTimer = null;
+  const PREF = () => `creapilot-ws:${session.user.id}`;
+  const sig = (c) => JSON.stringify(c, (k, v) => (k === 'u' ? undefined : v));
+  const SHARED_KEYS = ['brand', 'stock', 'onboardingHidden'];
+  function markSynced() {
+    synced = { creators: new Map(state.creators.map((c) => [c.id, sig(c)])), keys: Object.fromEntries(SHARED_KEYS.map((k) => [k, JSON.stringify(state[k] ?? null)])) };
+  }
+  async function loadWorkspace() {
+    let { data: mem, error } = await sb.from('workspace_members').select('workspace_id, role, workspaces(name)').eq('user_id', session.user.id);
+    if (error) return false;
+    if (!mem || !mem.length) {
+      // Premier passage : on reprend l'ancienne sauvegarde personnelle s'il y en a une
+      const { data: legacy } = await sb.from('app_state').select('data').eq('user_id', session.user.id).maybeSingle();
+      const start = legacy && legacy.data ? legacy.data : { creators: [], stock: {}, brand: '', demo: false };
+      if (start.name) { start.names = { [session.user.id]: start.name }; delete start.name; }
+      const { error: e2 } = await sb.rpc('create_workspace', { p_name: start.brand || '', p_data: start });
+      if (e2) return false;
+      ({ data: mem, error } = await sb.from('workspace_members').select('workspace_id, role, workspaces(name)').eq('user_id', session.user.id));
+      if (error || !mem || !mem.length) return false;
+    }
+    let pref = null; try { pref = localStorage.getItem(PREF()); } catch (e) {}
+    const cur = mem.find((m) => m.workspace_id === pref) || mem.find((m) => m.role === 'member') || mem[0];
+    wsId = cur.workspace_id; wsRole = cur.role;
+    const sel = $('#ws-select');
+    sel.innerHTML = mem.map((m) => `<option value="${m.workspace_id}">${esc((m.workspaces && m.workspaces.name) || 'Mon espace')}${m.role === 'owner' ? ' (à moi)' : ''}</option>`).join('');
+    sel.value = wsId; $('#ws-wrap').hidden = mem.length < 2;
+    const { data: ws, error: e3 } = await sb.from('workspaces').select('name, data, version').eq('id', wsId).single();
+    if (e3 || !ws) return false;
+    wsName = ws.name; state = ws.data || {}; baseVersion = ws.version;
+    state.creators = state.creators || []; state.stock = state.stock || {};
+    markSynced();
+    return true;
+  }
+  // Repère ce qui a changé localement depuis la dernière synchronisation
+  function stampChanges() {
+    if (!synced) return;
+    const now = Date.now(), ids = new Set();
+    state.creators.forEach((c) => { ids.add(c.id); if (synced.creators.get(c.id) !== sig(c)) c.u = now; });
+    state.deleted = state.deleted || {};
+    synced.creators.forEach((_v, id) => { if (!ids.has(id)) state.deleted[id] = now; });
+    const limit = now - 30 * 864e5;
+    Object.keys(state.deleted).forEach((id) => { if (state.deleted[id] < limit) delete state.deleted[id]; });
+  }
+  // Fusionne les changements d'un collègue avec les tiens, créateur par créateur (le plus récent gagne)
+  function merge(local, remote) {
+    const out = { ...remote };
+    SHARED_KEYS.forEach((k) => { if (synced && JSON.stringify(local[k] ?? null) !== synced.keys[k]) out[k] = local[k]; });
+    out.names = { ...(remote.names || {}), ...(local.names || {}) };
+    const tombs = { ...(remote.deleted || {}) };
+    Object.entries(local.deleted || {}).forEach(([id, t]) => { tombs[id] = Math.max(t, tombs[id] || 0); });
+    const byId = new Map((remote.creators || []).map((c) => [c.id, c]));
+    const order = [];
+    (local.creators || []).forEach((c) => { const r = byId.get(c.id); if (!r || (c.u || 0) >= (r.u || 0)) byId.set(c.id, c); order.push(c.id); });
+    (remote.creators || []).forEach((c) => { if (!order.includes(c.id)) order.push(c.id); });
+    out.creators = order.map((id) => byId.get(id)).filter((c) => c && !(tombs[c.id] && tombs[c.id] >= (c.u || 0)));
+    out.deleted = tombs; out.demo = local.demo;
+    return out;
+  }
+  function startPolling() {
+    clearInterval(pollTimer);
+    pollTimer = setInterval(async () => {
+      if (!wsId || document.hidden || pushing || saveTimer || $('#dlg').open || $('#imp').open) return;
+      const { data } = await sb.from('workspaces').select('version').eq('id', wsId).single();
+      if (!data || data.version <= baseVersion) return;
+      const { data: ws } = await sb.from('workspaces').select('data, version').eq('id', wsId).single();
+      if (!ws || pushing || saveTimer) return;
+      state = ws.data || {}; state.creators = state.creators || []; state.stock = state.stock || {};
+      baseVersion = ws.version; usingDemo = !!state.demo; markSynced();
+      applySettings(); render(); toast('Mis à jour avec les changements de ton équipe');
+    }, 20000);
+  }
+  $('#ws-select').addEventListener('change', async (e) => {
+    clearTimeout(saveTimer); saveTimer = null; if (wsId) await pushCloud();
+    try { localStorage.setItem(PREF(), e.target.value); } catch (err) {}
+    location.reload();
+  });
+
+  /* ---------- Vue Équipe ---------- */
+  async function loadTeam() {
+    $('#team-ws-name').textContent = wsName || 'Ton espace';
+    const owner = wsRole === 'owner';
+    $('#team-form').hidden = !owner;
+    $('#team-invite-help').textContent = owner
+      ? 'Ton collègue se connecte à Créapilot avec cette adresse e-mail : il rejoint automatiquement ton espace.'
+      : 'Seul le propriétaire de l’espace peut inviter de nouveaux membres.';
+    const [{ data: members }, { data: invites }] = await Promise.all([
+      sb.from('workspace_members').select('user_id, email, role').eq('workspace_id', wsId).order('created_at'),
+      sb.from('workspace_invites').select('email, created_at').eq('workspace_id', wsId).order('created_at'),
+    ]);
+    $('#team-members').innerHTML = (members || []).map((m) => `<li>
+        <span class="avatar" style="background:${colorFor(m.email)}">${esc(m.email.charAt(0).toUpperCase())}</span>
+        <span class="info"><b>${esc((state.names || {})[m.user_id] || m.email.split('@')[0])}</b><small>${esc(m.email)}${m.user_id === session.user.id ? ' · toi' : ''}</small></span>
+        <span class="pill" style="background:var(--surface);color:var(--muted)">${m.role === 'owner' ? 'Propriétaire' : 'Membre'}</span>
+        ${owner && m.user_id !== session.user.id ? `<button class="btn btn-sm btn-ghost btn-danger" type="button" data-remove="${m.user_id}" data-email="${esc(m.email)}">Retirer</button>` : ''}
+      </li>`).join('') || '<li class="empty">Impossible de charger l’équipe.</li>';
+    $('#team-invites').innerHTML = (invites || []).length ? invites.map((i) => `<li>
+        <span class="info"><b>${esc(i.email)}</b><small>Invité le ${dShort(i.created_at)} · en attente de sa première connexion</small></span>
+        ${owner ? `<button class="btn btn-sm btn-ghost" type="button" data-cancel-invite="${esc(i.email)}">Annuler</button>` : ''}
+      </li>`).join('') : '<li class="empty">Aucune invitation en attente.</li>';
+  }
+  $('#team-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = $('#team-email').value.trim(); if (!email) return;
+    $('#team-go').disabled = true;
+    const { error } = await sb.rpc('invite_member', { ws: wsId, p_email: email });
+    $('#team-go').disabled = false;
+    if (error) { toast(error.message || 'L’invitation a échoué. Réessaie.'); return; }
+    $('#team-email').value = ''; toast(`${email} est invité : envoie-lui le lien de l’application`); loadTeam();
+  });
+  let removeArmed = null;
+  $('#view-equipe').addEventListener('click', async (e) => {
+    const c = e.target.closest('[data-cancel-invite]');
+    if (c) { const { error } = await sb.rpc('cancel_invite', { ws: wsId, p_email: c.dataset.cancelInvite }); toast(error ? error.message : 'Invitation annulée'); loadTeam(); return; }
+    const r = e.target.closest('[data-remove]');
+    if (r) {
+      if (removeArmed !== r.dataset.remove) { removeArmed = r.dataset.remove; r.textContent = 'Confirmer le retrait'; return; }
+      removeArmed = null;
+      const { error } = await sb.rpc('remove_member', { ws: wsId, p_user: r.dataset.remove });
+      toast(error ? error.message : `${r.dataset.email} ne fait plus partie de l’espace`); loadTeam();
+    }
+  });
+  $('#team-copy-link').addEventListener('click', async () => {
+    const url = location.origin + location.pathname;
+    try { await navigator.clipboard.writeText(url); toast('Lien copié : ' + url); } catch (e) { toast('Lien de l’application : ' + url); }
+  });
   /* ---------- Inscrits de la page de vente (visible pour les comptes listés dans la table admins) ---------- */
   let isAdmin = false, leads = [];
   const CREATOR_RANGES = { '1-10': '1 à 10', '10-30': '10 à 30', '30-100': '30 à 100', '100+': 'Plus de 100' };
@@ -799,13 +965,23 @@ textarea { resize: vertical; }
   });
 
   function queueCloudSave() {
-    if (!sb || !session || !loaded) return;
+    if (!sb || !session || !loaded || !wsId) return;
     setSync('saving'); clearTimeout(saveTimer); clearTimeout(retryTimer);
-    saveTimer = setTimeout(pushCloud, 700);
+    saveTimer = setTimeout(() => { saveTimer = null; pushCloud(); }, 700);
   }
-  async function pushCloud() {
-    const { error } = await sb.from('app_state').upsert({ user_id: session.user.id, data: state, updated_at: new Date().toISOString() });
-    if (error) { setSync('error'); retryTimer = setTimeout(pushCloud, 10000); } else setSync('ok');
+  async function pushCloud(attempt = 0) {
+    if (!wsId) return;
+    pushing = true;
+    stampChanges();
+    const { data, error } = await sb.rpc('save_workspace', { ws: wsId, p_data: state, p_base: baseVersion });
+    const row = Array.isArray(data) ? data[0] : data;
+    if (error || !row) { pushing = false; setSync('error'); retryTimer = setTimeout(() => pushCloud(), 10000); return; }
+    if (row.saved) { baseVersion = row.new_version; markSynced(); pushing = false; setSync('ok'); return; }
+    // Un collègue a enregistré entre-temps : on fusionne puis on réessaie
+    state = merge(state, row.current_data || {}); baseVersion = row.new_version;
+    pushing = false; render();
+    if (attempt < 3) return pushCloud(attempt + 1);
+    setSync('error'); retryTimer = setTimeout(() => pushCloud(), 10000);
   }
   $('#auth-form').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -817,9 +993,10 @@ textarea { resize: vertical; }
     else showAuth('sent', `Un lien de connexion a été envoyé à ${email}. Ouvre-le sur cet appareil pour accéder à ton espace.`);
   });
   $('#logout').addEventListener('click', async () => {
-    clearTimeout(saveTimer);
-    if (session) await pushCloud();
+    clearTimeout(saveTimer); saveTimer = null; clearInterval(pollTimer);
+    if (session && wsId) await pushCloud();
     await sb.auth.signOut();
+    wsId = null; synced = null;
     state = { creators: [], brand: '', name: '', demo: false }; render();
   });
 
@@ -870,7 +1047,7 @@ textarea { resize: vertical; }
   /* ---------- Tableau de bord ---------- */
   function renderDashboard() {
     $('#today-label').textContent = new Intl.DateTimeFormat('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date());
-    $('#hello').innerHTML = state.name ? `Bonjour <em>${esc(state.name)}</em>, voici tes créateurs` : 'Bonjour, voici tes créateurs';
+    $('#hello').innerHTML = myName() ? `Bonjour <em>${esc(myName())}</em>, voici tes créateurs` : 'Bonjour, voici tes créateurs';
 
     const cur = salesBetween(30, 0), prev = salesBetween(60, 30);
     $('#k-sales').textContent = eur(cur);
@@ -1068,8 +1245,8 @@ textarea { resize: vertical; }
   function onboardingSteps() {
     const cs = state.creators, logs = cs.flatMap((c) => c.log || []);
     return [
-      { id: 'infos', done: !!(state.brand && state.name), title: 'Renseigne ta marque et ton prénom', hint: 'Ils servent à signer tes messages aux créateurs.',
-        actions: `<input id="ob-brand" placeholder="Ta marque" value="${esc(state.brand || '')}" aria-label="Ta marque"><input id="ob-name" placeholder="Ton prénom" value="${esc(state.name || '')}" aria-label="Ton prénom">` },
+      { id: 'infos', done: !!(state.brand && myName()), title: 'Renseigne ta marque et ton prénom', hint: 'Ils servent à signer tes messages aux créateurs.',
+        actions: `<input id="ob-brand" placeholder="Ta marque" value="${esc(state.brand || '')}" aria-label="Ta marque"><input id="ob-name" placeholder="Ton prénom" value="${esc(myName())}" aria-label="Ton prénom">` },
       { id: 'creators', done: cs.length >= 3, title: 'Ajoute tes créateurs', hint: cs.length ? `${cs.length} pour l’instant : ajoute-en au moins 3.` : 'Importe ta liste depuis Excel en 2 minutes.',
         actions: '<button class="btn btn-sm" type="button" data-imp>Importer</button><button class="btn btn-sm" type="button" data-add>Ajouter</button>' },
       { id: 'stock', done: Object.keys(state.stock || {}).length > 0, title: 'Indique ton stock d’échantillons', hint: 'Il baissera tout seul à chaque colis envoyé.',
@@ -1097,7 +1274,7 @@ textarea { resize: vertical; }
   }
   $('#onboard').addEventListener('input', (e) => {
     if (e.target.id === 'ob-brand') { state.brand = e.target.value; $('#s-brand').value = state.brand; }
-    else if (e.target.id === 'ob-name') { state.name = e.target.value; $('#s-name').value = state.name; }
+    else if (e.target.id === 'ob-name') { setMyName(e.target.value); $('#s-name').value = e.target.value; }
     else return;
     save(); clearTimeout(obTimer); obTimer = setTimeout(renderDashboard, 600);
   });
@@ -1122,11 +1299,13 @@ textarea { resize: vertical; }
 
   /* ---------- Navigation ---------- */
   function go(view) {
-    if (!['tableau', 'createurs', 'colis', 'inscrits'].includes(view) || (view === 'inscrits' && !isAdmin)) view = 'tableau';
+    if (!['tableau', 'createurs', 'colis', 'equipe', 'inscrits'].includes(view) || (view === 'inscrits' && !isAdmin) || (view === 'equipe' && !wsId)) view = 'tableau';
     $('#view-tableau').hidden = view !== 'tableau';
     $('#view-createurs').hidden = view !== 'createurs';
     $('#view-inscrits').hidden = view !== 'inscrits';
     $('#view-colis').hidden = view !== 'colis';
+    $('#view-equipe').hidden = view !== 'equipe';
+    if (view === 'equipe') loadTeam();
     if (view === 'inscrits') loadLeads();
     $$('.nav button').forEach((b) => { if (b.dataset.view === view) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
     try { history.replaceState(null, '', '#' + view); } catch (e) {}
@@ -1168,7 +1347,7 @@ textarea { resize: vertical; }
     c.stage = stage; c.last = today(); addLog(c, `Passé à « ${STAGES[SI[stage]].label} »`);
     commit(`${c.handle} → ${STAGES[SI[stage]].label}`, () => restore(snap));
   }
-  function addLog(c, t) { (c.log = c.log || []).push({ d: new Date().toISOString(), t }); if (c.log.length > 50) c.log.shift(); }
+  function addLog(c, t) { const e = { d: new Date().toISOString(), t }; const by = author(); if (by) e.by = by; (c.log = c.log || []).push(e); if (c.log.length > 50) c.log.shift(); }
   const snapshot = () => JSON.stringify(state.creators);
   function restore(snap) { state.creators = JSON.parse(snap); commit('Modification annulée'); }
 
@@ -1206,7 +1385,7 @@ textarea { resize: vertical; }
     if (editing) tk.href = 'https://www.tiktok.com/' + encodeURIComponent(c.handle);
     const log = (c.log || []).slice(-8).reverse();
     $('#log-wrap').hidden = !editing;
-    $('#log').innerHTML = log.length ? log.map((l) => `<li><time>${dShort(l.d)} ${new Date(l.d).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</time><span>${esc(l.t)}</span></li>`).join('') : '<li class="muted">Rien d’enregistré pour l’instant. Les déplacements, ventes et messages envoyés apparaîtront ici.</li>';
+    $('#log').innerHTML = log.length ? log.map((l) => `<li><time>${dShort(l.d)} ${new Date(l.d).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</time><span>${l.by ? `<b>${esc(l.by)}</b> · ` : ''}${esc(l.t)}</span></li>`).join('') : '<li class="muted">Rien d’enregistré pour l’instant. Les déplacements, ventes et messages envoyés apparaîtront ici.</li>';
     if (template) { tpl = template; $$('[data-tpl]').forEach((x) => x.setAttribute('aria-pressed', x.dataset.tpl === tpl)); }
     delArmed = false; $('#del-btn').textContent = 'Supprimer';
     showTab(tab);
@@ -1254,7 +1433,7 @@ textarea { resize: vertical; }
   }));
   function writeMessage() {
     const c = current(), h = c.handle || '@pseudo';
-    const brand = state.brand || '[ta marque]', me = state.name || '[ton prénom]', p = c.product || '[ton produit]', t = total(c);
+    const brand = state.brand || '[ta marque]', me = myName() || '[ton prénom]', p = c.product || '[ton produit]', t = total(c);
     const T = {
       invite: `Bonjour ${h} 👋\n\nJe suis ${me}, de ${brand}. J’adore tes vidéos ${c.cat.toLowerCase()}, ton style colle parfaitement à notre univers.\n\nJ’aimerais t’envoyer gratuitement notre ${p} pour que tu le testes. Si tu l’aimes et que tu en parles, tu touches ${c.commission} % de commission sur chaque vente via TikTok Shop (lien affilié dans ta vitrine).\n\nÇa te dirait ? Si oui, envoie-moi ton adresse et je t’expédie le colis cette semaine.\n\n${me}`,
       relance: `Coucou ${h} !\n\nJe reviens vers toi au sujet de notre ${p}. ${c.stage === 'echantillon' ? 'Tu as bien reçu le colis ? Tu as pu le tester ?' : 'Tu as eu le temps de voir mon message ?'}\n\nAucune pression : dis-moi simplement si ça t’intéresse toujours. La commission de ${c.commission} % tient toujours, et je peux t’envoyer des idées de vidéo si ça t’aide.\n\nBelle journée,\n${me} (${brand})`,
@@ -1315,7 +1494,7 @@ textarea { resize: vertical; }
     btn.disabled = true; btn.textContent = 'Rédaction en cours…';
     const { data, error } = await sb.functions.invoke('generate-message', {
       body: {
-        kind: tpl, brand: state.brand, name: state.name, instruction: $('#ai-instr').value.trim(),
+        kind: tpl, brand: state.brand, name: myName(), instruction: $('#ai-instr').value.trim(),
         creator: { handle: c.handle, cat: c.cat, followers: c.followers, commission: c.commission, product: c.product, stage: c.stage, notes: c.notes, sales: total(c), daysSince: daysSince(c.last) },
       },
     });
@@ -1467,7 +1646,7 @@ textarea { resize: vertical; }
 
   /* ---------- Réglages ---------- */
   $('#s-brand').addEventListener('input', (e) => { state.brand = e.target.value; save(); });
-  $('#s-name').addEventListener('input', (e) => { state.name = e.target.value; save(); renderDashboard(); });
+  $('#s-name').addEventListener('input', (e) => { setMyName(e.target.value); save(); renderDashboard(); });
   $('#s-brand').addEventListener('change', renderDashboard);
   ['#search', '#flt-cat', '#flt-prod', '#flt-alert'].forEach((s) => $(s).addEventListener(s === '#search' ? 'input' : 'change', renderBoard));
   let clearArmed = false;
@@ -1489,7 +1668,7 @@ textarea { resize: vertical; }
   $('#toast-undo').addEventListener('click', () => { const u = toastUndo; toastUndo = null; $('#toast').hidden = true; if (u) u(); });
   let rz; window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { if (!$('#view-tableau').hidden) weeklyChart(weeks()); }, 120); });
 
-  function applySettings() { $('#s-brand').value = state.brand || ''; $('#s-name').value = state.name || ''; }
+  function applySettings() { $('#s-brand').value = state.brand || ''; $('#s-name').value = myName(); }
 
   if (cloudOn()) {
     state = { creators: [], brand: '', name: '', demo: false }; usingDemo = false;

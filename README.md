@@ -28,6 +28,7 @@ MVP d’un CRM pour les vendeurs **TikTok Shop** : suivre ses créateurs affili�
 - **Filtres** : catégorie, produit, « à relancer seulement ».
 - **Historique** par créateur, bouton « J’ai envoyé ce message » et annulation de la dernière action.
 - **Colis d’échantillons** : adresse, transporteur, numéro de suivi cliquable, dates d’envoi et de livraison, vue « À envoyer / En route / Livrés », stock d’échantillons par produit (baisse automatique à chaque envoi). L’alerte « Vidéo en retard » part de la date de livraison réelle.
+- **Équipe** (version en ligne) : espace partagé par marque, invitations par e-mail, fusion automatique des modifications faites en même temps, historique signé par chaque membre.
 - **Inscrits** (compte administrateur) : la liste des marques inscrites depuis la page de vente.
 - **Fiche créateur** : catégorie, abonnés, commission, produit, ventes, notes.
 
@@ -43,7 +44,7 @@ Sans configuration, l’application tourne en mode démo (données dans le navig
 
 ## Limites connues (volontaires pour un MVP)
 
-- Un espace par compte : pas encore de partage entre plusieurs membres d’une équipe.
+- Les invitations d’équipe ne sont pas envoyées par e-mail : le propriétaire partage lui-même le lien de l’application.
 - La rédaction par IA demande la version en ligne (Supabase) et une clé d’API Anthropic.
 - Pas de connexion à TikTok Shop : les ventes se saisissent à la main.
 

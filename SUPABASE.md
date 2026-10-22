@@ -87,8 +87,25 @@ supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
 
 **Sécurité** : si une demande est bloquée par un filtre de sécurité de l’IA, la fonction réessaie automatiquement avec un autre modèle Claude ; si elle est encore refusée, l’utilisateur voit un message lui demandant de reformuler.
 
+## 7. Travailler en équipe
+
+Chaque compte a un **espace** : la première connexion le crée, et la personne qui le crée en est propriétaire.
+
+1. Dans l’application, onglet **Équipe** : saisis l’adresse e-mail d’un collègue puis **Inviter**.
+2. Envoie-lui le lien de l’application (bouton « Copier le lien de l’application »). Aucun e-mail d’invitation n’est envoyé automatiquement.
+3. Ton collègue se connecte avec **cette adresse e-mail** : il rejoint ton espace automatiquement et voit les mêmes créateurs, colis et ventes.
+
+Bon à savoir :
+- Si deux personnes modifient en même temps, l’application **fusionne les changements créateur par créateur**. Si les deux modifient le même créateur, c’est la modification la plus récente qui est gardée.
+- Les changements des collègues apparaissent automatiquement en moins de 30 secondes.
+- Chacun signe ses messages avec son propre prénom, et l’historique de chaque créateur indique qui a fait quoi.
+- Seul le propriétaire peut inviter ou retirer des membres.
+- Une personne invitée dans plusieurs espaces (une agence, par exemple) choisit l’espace dans la barre latérale.
+- Les comptes créés avant cette mise à jour retrouvent leurs données : elles sont reprises dans leur espace à la première connexion.
+
+Le script `supabase/schema.sql` contient les tables de l’équipe : relance-le en entier dans **SQL Editor** après chaque mise à jour (il peut être exécuté plusieurs fois sans risque).
+
 ## Bon à savoir
 
 - **E-mails de connexion** : Supabase envoie gratuitement quelques e-mails par heure seulement. C’est suffisant pour les premiers clients. Au-delà, branche un service d’envoi d’e-mails (par exemple Resend ou Brevo) dans **Authentication** → **Emails** → **SMTP Settings**.
-- **Plusieurs appareils** : si le même compte modifie les données sur deux appareils en même temps, c’est la dernière modification enregistrée qui est gardée.
-- **Une personne par compte** : pour l’instant, chaque compte a son propre espace. Le partage d’un espace entre plusieurs membres d’une équipe viendra plus tard.
+- **Plusieurs appareils** : comme pour une équipe, les modifications faites en même temps sur deux appareils sont fusionnées créateur par créateur.

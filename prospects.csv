@@ -1,26 +1,28 @@
-priorite,nom,type,categorie,signal,fiabilite_signal,ou_contacter,message,statut
-A,Typology,Marque,Soin visage,Citée comme cas de live shopping TikTok Shop axé pédagogie produit,Source presse (Site des marques / Shopify FR),LinkedIn (responsable influence ou social commerce) + formulaire pro du site,Message A,À contacter
-A,Le Rouge Français,Marque,Maquillage,Citée parmi les marques françaises indépendantes sur TikTok Shop,Source presse,LinkedIn (fondatrice ou marketing) + DM TikTok,Message A,À contacter
-A,Cut by Fred,Marque,Capillaire,Citée parmi les marques françaises indépendantes sur TikTok Shop,Source presse,LinkedIn (marketing ou e-commerce) + DM Instagram,Message A,À contacter
-A,Mium Lab,Marque,Compléments alimentaires,Citée parmi les marques françaises indépendantes sur TikTok Shop,Source presse,LinkedIn (fondateurs) + formulaire du site,Message A,À contacter
-A,Blissim,Marque,Box et e-shop beauté,Citée comme exemple de croissance par l’affiliation sur TikTok Shop,Source vendeur (Kalodata),LinkedIn (social commerce ou influence),Message A,À contacter
-A,For.Me,Marque,Beauté (marque d’influenceur),Citée par TikTok Shop : +205 % de commandes via la plateforme,Chiffre de TikTok Shop,DM TikTok + LinkedIn,Message A,À contacter
-A,L’Atelier du Sourcil,Marque,Beauté (sourcils),Citée parmi les acteurs qui testent les formats TikTok Shop,Source presse,LinkedIn (marketing digital),Message A,À contacter
-A,Adopt’,Marque,Parfums,Citée parmi les marques françaises sur TikTok Shop,Source presse,LinkedIn (e-commerce ou social media),Message A,À contacter
-A,Nuclever,Marque,Compléments alimentaires,Produit Cortisol Manager dans les meilleures ventes TikTok Shop France (janvier 2026),Source vendeur (Lengow),LinkedIn + formulaire du site,Message A,À contacter
-A,Aldous Bio,Marque,Cosmétiques bio,Listée parmi les marques françaises du top TikTok Shop,Source peu fiable : à vérifier,LinkedIn + DM Instagram,Message A,À vérifier
-B,CreatoRev France,Agence,Social commerce TikTok Shop,Lancée le 21 octobre 2026 (heaven x CreatoRev) : recrute et s’équipe en ce moment,Source presse,LinkedIn (Country Lead annoncée dans la presse),Message B,À contacter
-B,Effinity,Agence,Affiliation et TikTok Shop Partner,Se présente comme agence partenaire TikTok Shop France,Site de l’agence,LinkedIn (pôle affiliation créateurs),Message B,À contacter
-B,Neads,Agence,TikTok Shop Partner,Se présente comme TikTok Shop Partner officiel en France,Site de l’agence,LinkedIn + formulaire du site,Message B,À contacter
-B,Third (Coudac),Agence,TikTok Shop,A recruté un Affiliate Creator Manager TikTok Shop (offre de février 2026),Offre d’emploi (ancienne),LinkedIn (équipe Third),Message B,À contacter
-B,Slink,Agence,TikTok Shop,Publie un guide TikTok Shop France pour les marques,Site de l’agence,LinkedIn + formulaire du site,Message B,À contacter
-B,Les Wizards,Agence,Affiliation TikTok Shop,Publie un guide de l’affiliation TikTok Shop,Site de l’agence,LinkedIn + formulaire du site,Message B,À contacter
-C,Merci Handy,Marque,Hygiène et beauté,Marque française très présente sur TikTok,Présence TikTok Shop à vérifier,DM TikTok + LinkedIn,Message C,À vérifier
-C,Respire,Marque,Cosmétiques naturels,Marque française née en ligne,Présence TikTok Shop à vérifier,LinkedIn + DM Instagram,Message C,À vérifier
-C,Horace,Marque,Soin homme,Marque française née en ligne,Présence TikTok Shop à vérifier,LinkedIn,Message C,À vérifier
-C,Cuure,Marque,Compléments alimentaires,Marque française née en ligne,Présence TikTok Shop à vérifier,LinkedIn,Message C,À vérifier
-C,Joone,Marque,Bébé,Marque française née en ligne,Présence TikTok Shop à vérifier,LinkedIn,Message C,À vérifier
-C,Le Slip Français,Marque,Mode,Marque française née en ligne,Présence TikTok Shop à vérifier,LinkedIn,Message C,À vérifier
-C,Pimpant,Marque,Maison (entretien),Marque française née en ligne,Présence TikTok Shop à vérifier,LinkedIn + DM Instagram,Message C,À vérifier
-C,Unbottled,Marque,Cosmétiques solides,Marque française née en ligne,Présence TikTok Shop à vérifier,LinkedIn + DM Instagram,Message C,À vérifier
-C,Gallinée,Marque,Soin visage,Marque française née en ligne,Présence TikTok Shop à vérifier,LinkedIn,Message C,À vérifier
+priorite,nom,type,categorie,signal,fiabilite_signal,ou_contacter,message,statut,notes_recherche
+A,Typology,Marque,Soin visage,Citée comme cas de live shopping TikTok Shop axé pédagogie produit,Source presse (Site des marques / Shopify FR),LinkedIn (responsable influence ou social commerce) + formulaire pro du site,Message A,À contacter,Aucune info nouvelle trouvée. Vérifier l’onglet Boutique sur TikTok.
+A,Le Rouge Français,Marque,Maquillage,Citée parmi les marques françaises indépendantes sur TikTok Shop,Source presse,LinkedIn (fondatrice ou marketing) + DM TikTok,Message A,À contacter,Programme d’affiliation sur Awin (interdit la pub TikTok payante aux affiliés) : connaît déjà l’affiliation. TikTok Shop non confirmé.
+A,Cut by Fred,Marque,Capillaire,Citée parmi les marques françaises indépendantes sur TikTok Shop,Source presse,LinkedIn (marketing ou e-commerce) + DM Instagram,Message A,À contacter,"Fondée en 2018 par Fred Birault, coiffeur parisien. Soins capillaires vegan, best-seller : shampoing solide Detox en stick (25 €). TikTok Shop non confirmé."
+A,Mium Lab,Marque,Compléments alimentaires,Citée parmi les marques françaises indépendantes sur TikTok Shop,Source presse,LinkedIn (fondateurs) + formulaire du site,Message A,À contacter,Fondée en 2019. Fondateurs et TikTok Shop non trouvés en ligne.
+A,Blissim,Marque,Box et e-shop beauté,Citée comme exemple de croissance par l’affiliation sur TikTok Shop,Source vendeur (Kalodata),LinkedIn (social commerce ou influence),Message A,À contacter,"Au lancement de TikTok Shop, des créateurs ont présenté des produits de box Blissim (Gens d’Internet)."
+A,For.Me,Marque,Beauté (marque d’influenceur),Citée par TikTok Shop : +205 % de commandes via la plateforme,Chiffre de TikTok Shop,DM TikTok + LinkedIn,Message A,À contacter,Marque lancée par un influenceur en 2025 ; TikTok annonce +205 % de commandes. Fondateur non trouvé.
+A,L’Atelier du Sourcil,Marque,Beauté (sourcils),Citée parmi les acteurs qui testent les formats TikTok Shop,Source presse,LinkedIn (marketing digital),Message A,À contacter,"Citée dans la liste presse des marques présentes dès le lancement. Appartient à IEVA Group depuis 2020, 120+ ateliers, vendue chez Marionnaud : décision plus lente."
+A,Adopt’,Marque,Parfums,Citée parmi les marques françaises sur TikTok Shop,Source presse,LinkedIn (e-commerce ou social media),Message A,À contacter,"N°1 des marques de parfum françaises sur TikTok en valeur média (Kolsquare, sept. 2025). Plus de 60 boutiques : grande structure, décision plus lente."
+A,Nuclever,Marque,Compléments alimentaires,Produit Cortisol Manager dans les meilleures ventes TikTok Shop France (janvier 2026),Source vendeur (Lengow),LinkedIn + formulaire du site,Message A,À contacter,Fiche produit et avis en français ; origine française non confirmée.
+A,Aldous Bio,Marque,Cosmétiques bio,Listée parmi les marques françaises du top TikTok Shop,Source peu fiable : à vérifier,LinkedIn + DM Instagram,Message A,À vérifier,Non recherchée : source initiale peu fiable.
+A,Paalm,Marque,Soin,Citée dans la liste presse des marques présentes dès le lancement de TikTok Shop France,Source presse (CB News),LinkedIn + DM TikTok,Message A,À vérifier,Nouvelle piste trouvée pendant la recherche.
+A,SVR,Marque,Dermocosmétique,Citée dans la liste presse des marques présentes dès le lancement de TikTok Shop France,Source presse (CB News),LinkedIn (social commerce ou influence),Message A,À vérifier,Laboratoire de taille moyenne à grande : décision plus lente.
+B,CreatoRev France,Agence,Social commerce TikTok Shop,Lancée le 21 octobre 2026 (heaven x CreatoRev) : recrute et s’équipe en ce moment,Source presse,LinkedIn (Country Lead annoncée dans la presse),Message B,À contacter,
+B,Effinity,Agence,Affiliation et TikTok Shop Partner,Se présente comme agence partenaire TikTok Shop France,Site de l’agence,LinkedIn (pôle affiliation créateurs),Message B,À contacter,
+B,Neads,Agence,TikTok Shop Partner,Se présente comme TikTok Shop Partner officiel en France,Site de l’agence,LinkedIn + formulaire du site,Message B,À contacter,
+B,Third (Coudac),Agence,TikTok Shop,A recruté un Affiliate Creator Manager TikTok Shop (offre de février 2026),Offre d’emploi (ancienne),LinkedIn (équipe Third),Message B,À contacter,
+B,Slink,Agence,TikTok Shop,Publie un guide TikTok Shop France pour les marques,Site de l’agence,LinkedIn + formulaire du site,Message B,À contacter,
+B,Les Wizards,Agence,Affiliation TikTok Shop,Publie un guide de l’affiliation TikTok Shop,Site de l’agence,LinkedIn + formulaire du site,Message B,À contacter,
+C,Merci Handy,Marque,Hygiène et beauté,Marque française très présente sur TikTok,Présence TikTok Shop à vérifier,DM TikTok + LinkedIn,Message C,À vérifier,
+C,Respire,Marque,Cosmétiques naturels,Marque française née en ligne,Présence TikTok Shop à vérifier,LinkedIn + DM Instagram,Message C,À vérifier,
+C,Horace,Marque,Soin homme,Marque française née en ligne,Présence TikTok Shop à vérifier,LinkedIn,Message C,À vérifier,
+C,Cuure,Marque,Compléments alimentaires,Marque française née en ligne,Présence TikTok Shop à vérifier,LinkedIn,Message C,À vérifier,
+C,Joone,Marque,Bébé,Marque française née en ligne,Présence TikTok Shop à vérifier,LinkedIn,Message C,À vérifier,
+C,Le Slip Français,Marque,Mode,Marque française née en ligne,Présence TikTok Shop à vérifier,LinkedIn,Message C,À vérifier,
+C,Pimpant,Marque,Maison (entretien),Marque française née en ligne,Présence TikTok Shop à vérifier,LinkedIn + DM Instagram,Message C,À vérifier,
+C,Unbottled,Marque,Cosmétiques solides,Marque française née en ligne,Présence TikTok Shop à vérifier,LinkedIn + DM Instagram,Message C,À vérifier,
+C,Gallinée,Marque,Soin visage,Marque française née en ligne,Présence TikTok Shop à vérifier,LinkedIn,Message C,À vérifier,

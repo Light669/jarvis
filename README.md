@@ -14,6 +14,9 @@ MVP d’un CRM pour les vendeurs **TikTok Shop** : suivre ses créateurs affili�
 - **Relances automatiques** : un créateur trouvé depuis 5 jours, contacté depuis 3 jours sans suite, ou qui a reçu un échantillon depuis 7 jours sans vidéo apparaît dans « À faire aujourd’hui ».
 - **Messages prêts à copier** : invitation, relance, brief vidéo et remerciement, personnalisés avec le pseudo, le produit, la commission, la marque et le prénom.
 - **Chiffres clés** : créateurs suivis, échantillons sans vidéo, ventes générées et commissions à verser.
+- **Import et export** : coller une liste depuis Excel ou Google Sheets (ou déposer un CSV), et copier toute la liste pour la recoller dans un tableur.
+- **Filtres** : catégorie, produit, « à relancer seulement ».
+- **Historique** par créateur, bouton « J’ai envoyé ce message » et annulation de la dernière action.
 - **Fiche créateur** : catégorie, abonnés, commission, produit, ventes, notes.
 
 ## Lancer l’application

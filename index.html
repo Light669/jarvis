@@ -227,6 +227,25 @@ textarea { resize: vertical; }
 
 .toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 12px; font-weight: 600; font-size: 14px; z-index: 20; }
 
+/* Filtres, import, historique */
+.filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.filters select { padding: 9px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); max-width: 220px; }
+.chk { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); font-size: 14px; font-weight: 600; cursor: pointer; }
+.chk input { accent-color: var(--accent); width: 16px; height: 16px; }
+.log-wrap { display: flex; flex-direction: column; gap: 8px; }
+.log { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+.log li { display: flex; gap: 10px; align-items: baseline; }
+.log time { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; flex: none; width: 92px; }
+.msg-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
+.drop-zone { border: 2px dashed var(--line); border-radius: 14px; padding: 14px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; font-size: 14px; color: var(--muted); }
+.drop-zone.over { border-color: var(--accent); background: var(--accent-soft); }
+#imp-text { min-height: 150px; font: 13px/1.5 ui-monospace, "SF Mono", Menlo, monospace; }
+.imp-preview { background: var(--surface-2); border-radius: 12px; padding: 12px; font-size: 14px; display: flex; flex-direction: column; gap: 6px; }
+.imp-preview table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.imp-preview th, .imp-preview td { text-align: left; padding: 4px 6px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.toast { display: flex; align-items: center; gap: 14px; }
+.toast button { border: none; background: none; color: var(--bg); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; padding: 0; }
+
 @media (max-width: 1180px) { .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } .row-a, .row-b { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 860px) {
   .app { grid-template-columns: minmax(0, 1fr); gap: 16px; }
@@ -349,11 +368,18 @@ textarea { resize: vertical; }
           <h1>Créateurs</h1>
         </div>
         <div class="head-actions">
+          <button class="btn" type="button" id="imp-open">Importer</button>
+          <button class="btn" type="button" id="export-btn">Copier pour Excel</button>
           <button class="btn btn-primary" type="button" data-add>+ Ajouter un créateur</button>
         </div>
       </header>
       <div class="toolbar">
-        <input id="search" type="search" placeholder="Rechercher un créateur, un produit…" aria-label="Rechercher">
+        <div class="filters">
+          <input id="search" type="search" placeholder="Rechercher un créateur, un produit…" aria-label="Rechercher">
+          <select id="flt-cat" aria-label="Filtrer par catégorie"></select>
+          <select id="flt-prod" aria-label="Filtrer par produit"></select>
+          <label class="chk" for="flt-alert"><input type="checkbox" id="flt-alert"> À relancer seulement</label>
+        </div>
         <span class="hint">Glisse une carte vers une autre colonne, ou clique sur « Suivant ».</span>
       </div>
       <div class="board-scroll"><div class="board" id="board"></div></div>
@@ -366,6 +392,7 @@ textarea { resize: vertical; }
     <div class="dlg-head">
       <span class="avatar" id="dlg-avatar" aria-hidden="true">+</span>
       <h2 id="dlg-title">Nouveau créateur</h2>
+      <a class="btn btn-ghost btn-sm" id="dlg-tiktok" target="_blank" rel="noopener" hidden>Profil TikTok ↗</a>
       <button class="btn btn-ghost" type="button" id="dlg-close" aria-label="Fermer">✕</button>
     </div>
     <div class="tabs" role="tablist">
@@ -385,6 +412,10 @@ textarea { resize: vertical; }
         <label class="f" for="f-last">Dernière action <input id="f-last" type="date"></label>
       </div>
       <label class="f" for="f-notes">Notes <textarea id="f-notes" rows="3" placeholder="Adresse d’envoi, date de publication prévue, préférences…"></textarea></label>
+      <div class="log-wrap" id="log-wrap">
+        <p class="eyebrow">Historique</p>
+        <ul class="log" id="log"></ul>
+      </div>
     </div>
     <div class="dlg-body" data-pane="sales" hidden>
       <div class="calc num" id="sales-calc"></div>
@@ -403,7 +434,10 @@ textarea { resize: vertical; }
         <button class="btn btn-sm" type="button" data-tpl="merci" aria-pressed="false">Remerciement</button>
       </div>
       <label class="f" for="msg-out">Message prêt à envoyer (tu peux le modifier) <textarea id="msg-out"></textarea></label>
-      <span class="hint">Rempli avec le pseudo, le produit, la commission, ta marque et ton prénom. Copie-le puis colle-le dans TikTok.</span>
+      <div class="msg-actions">
+        <span class="hint">Copie le message, colle-le dans TikTok, puis indique-le ici.</span>
+        <button class="btn" type="button" id="sent-btn">J’ai envoyé ce message</button>
+      </div>
     </div>
     <div class="dlg-foot">
       <div><button class="btn btn-ghost btn-danger" type="button" id="del-btn">Supprimer</button></div>
@@ -416,7 +450,36 @@ textarea { resize: vertical; }
   </form>
 </dialog>
 
-<div class="toast" id="toast" role="status" hidden></div>
+<dialog id="imp" aria-labelledby="imp-title">
+  <form class="dlg" id="imp-form" method="dialog">
+    <div class="dlg-head">
+      <h2 id="imp-title">Importer des créateurs</h2>
+      <button class="btn btn-ghost" type="button" id="imp-close" aria-label="Fermer">✕</button>
+    </div>
+    <div class="dlg-body">
+      <p class="hint">Copie les lignes de ton fichier Excel ou Google Sheets (avec la ligne de titres si tu en as une) et colle-les ci-dessous. Colonnes reconnues : pseudo, abonnés, catégorie, produit, commission, étape, notes.</p>
+      <div class="drop-zone" id="imp-drop">
+        <span>Ou dépose un fichier CSV ici</span>
+        <label class="btn btn-sm" for="imp-file">Choisir un fichier</label>
+        <input id="imp-file" type="file" accept=".csv,.txt,.tsv,text/csv,text/plain" hidden>
+      </div>
+      <label class="f" for="imp-text">Lignes à importer <textarea id="imp-text" placeholder="Pseudo	Abonnés	Catégorie	Produit	Commission
+@lea.glow	48200	Beauté	Sérum vitamine C	15
+@max.fit	31k	Sport	Gourde isotherme	12"></textarea></label>
+      <div class="imp-preview" id="imp-preview" hidden></div>
+      <label class="chk" for="imp-replace" id="imp-replace-wrap"><input type="checkbox" id="imp-replace" checked> Remplacer les créateurs d’exemple</label>
+    </div>
+    <div class="dlg-foot">
+      <div></div>
+      <div>
+        <button class="btn" type="button" id="imp-cancel">Annuler</button>
+        <button class="btn btn-primary" type="submit" id="imp-go" disabled>Importer</button>
+      </div>
+    </div>
+  </form>
+</dialog>
+
+<div class="toast" id="toast" role="status" hidden><span id="toast-msg"></span><button type="button" id="toast-undo" hidden>Annuler</button></div>
 
 <script>
 (() => {
@@ -600,6 +663,7 @@ textarea { resize: vertical; }
         <span class="info"><b>${esc(c.handle)}</b><small>${STAGES[SI[c.stage]].label} · il y a ${daysSince(c.last)} j</small></span>
         <span class="pill">${alertFor(c)}</span>
         <button class="btn btn-sm" type="button" data-write="${c.id}">Écrire</button>
+        <button class="btn btn-sm btn-ghost" type="button" data-done="${c.id}" aria-label="Marquer ${esc(c.handle)} comme traité aujourd’hui">Fait</button>
       </li>`).join('') : '<li class="todo-empty">Tout est à jour. Aucun créateur n’attend de relance.</li>';
   }
   function renderFunnel() {
@@ -625,9 +689,17 @@ textarea { resize: vertical; }
   }
 
   /* ---------- Créateurs ---------- */
+  function fillSelect(sel, label, values) {
+    const cur = sel.value;
+    sel.innerHTML = `<option value="">${label}</option>` + values.map((v) => `<option>${esc(v)}</option>`).join('');
+    sel.value = values.includes(cur) ? cur : '';
+  }
   function renderBoard() {
-    const q = $('#search').value.trim().toLowerCase();
-    const list = state.creators.filter((c) => !q || [c.handle, c.product, c.cat, c.notes].join(' ').toLowerCase().includes(q));
+    fillSelect($('#flt-cat'), 'Toutes les catégories', [...new Set(state.creators.map((c) => c.cat))].sort());
+    fillSelect($('#flt-prod'), 'Tous les produits', [...new Set(state.creators.map((c) => c.product).filter(Boolean))].sort());
+    const q = $('#search').value.trim().toLowerCase(), cat = $('#flt-cat').value, prod = $('#flt-prod').value, onlyAlerts = $('#flt-alert').checked;
+    const list = state.creators.filter((c) => (!q || [c.handle, c.product, c.cat, c.notes].join(' ').toLowerCase().includes(q))
+      && (!cat || c.cat === cat) && (!prod || c.product === prod) && (!onlyAlerts || alertFor(c)));
     $('#board').innerHTML = STAGES.map((s, i) => {
       const cards = list.filter((c) => c.stage === s.id);
       return `<div class="col" data-stage="${s.id}" style="--c:${s.c}">
@@ -651,7 +723,7 @@ textarea { resize: vertical; }
     renderDashboard(); renderBoard();
     $('#data-note').textContent = usingDemo ? 'Données d’exemple, enregistrées dans ce navigateur.' : 'Tes données sont enregistrées dans ce navigateur.';
   }
-  function commit(msg) { save(); render(); if (msg) toast(msg); }
+  function commit(msg, undo) { save(); render(); if (msg) toast(msg, undo); }
 
   /* ---------- Navigation ---------- */
   function go(view) {
@@ -683,15 +755,23 @@ textarea { resize: vertical; }
     const el = e.target.closest('.card'); if (el) openDialog(el.dataset.id);
   });
   board.addEventListener('keydown', (e) => { if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('card')) { e.preventDefault(); openDialog(e.target.dataset.id); } });
-  $('#todo').addEventListener('click', (e) => { const b = e.target.closest('[data-write]'); if (b) openDialog(b.dataset.write, 'msg', 'relance'); });
+  $('#todo').addEventListener('click', (e) => {
+    const w = e.target.closest('[data-write]'); if (w) { const c = byId(w.dataset.write); openDialog(c.id, 'msg', c.stage === 'trouve' ? 'invite' : 'relance'); return; }
+    const d = e.target.closest('[data-done]');
+    if (d) { const c = byId(d.dataset.done), snap = snapshot(); c.last = today(); addLog(c, 'Action faite'); commit(`${c.handle} : action notée`, () => restore(snap)); }
+  });
   $('#rank').addEventListener('click', (e) => { const b = e.target.closest('[data-open-sales]'); if (b) openDialog(b.dataset.openSales, 'sales'); });
   $$('[data-add]').forEach((b) => b.addEventListener('click', () => openDialog(null)));
 
   function moveTo(id, stage) {
     const c = byId(id); if (!c || c.stage === stage) { render(); return; }
-    c.stage = stage; c.last = today();
-    commit(`${c.handle} → ${STAGES[SI[stage]].label}`);
+    const snap = snapshot();
+    c.stage = stage; c.last = today(); addLog(c, `Passé à « ${STAGES[SI[stage]].label} »`);
+    commit(`${c.handle} → ${STAGES[SI[stage]].label}`, () => restore(snap));
   }
+  function addLog(c, t) { (c.log = c.log || []).push({ d: new Date().toISOString(), t }); if (c.log.length > 50) c.log.shift(); }
+  const snapshot = () => JSON.stringify(state.creators);
+  function restore(snap) { state.creators = JSON.parse(snap); commit('Modification annulée'); }
 
   /* ---------- Fenêtre fiche ---------- */
   const dlg = $('#dlg');
@@ -711,7 +791,12 @@ textarea { resize: vertical; }
     $('#f-commission').value = c.commission; $('#f-product').value = c.product; $('#f-cost').value = c.cost;
     $('#f-stage').value = c.stage; $('#f-last').value = c.last; $('#f-notes').value = c.notes;
     $('#sale-date').value = today(); $('#sale-amount').value = '';
-    $('#del-btn').hidden = !editing; $('#done-btn').hidden = !editing;
+    $('#del-btn').hidden = !editing; $('#done-btn').hidden = !editing; $('#sent-btn').hidden = !editing;
+    const tk = $('#dlg-tiktok'); tk.hidden = !editing;
+    if (editing) tk.href = 'https://www.tiktok.com/' + encodeURIComponent(c.handle);
+    const log = (c.log || []).slice(-8).reverse();
+    $('#log-wrap').hidden = !editing;
+    $('#log').innerHTML = log.length ? log.map((l) => `<li><time>${dShort(l.d)} ${new Date(l.d).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</time><span>${esc(l.t)}</span></li>`).join('') : '<li class="muted">Rien d’enregistré pour l’instant. Les déplacements, ventes et messages envoyés apparaîtront ici.</li>';
     if (template) { tpl = template; $$('[data-tpl]').forEach((x) => x.setAttribute('aria-pressed', x.dataset.tpl === tpl)); }
     delArmed = false; $('#del-btn').textContent = 'Supprimer';
     showTab(tab);
@@ -777,25 +862,166 @@ textarea { resize: vertical; }
     e.preventDefault();
     const data = current();
     if (!data.handle) { showTab('info'); $('#f-handle').focus(); toast('Ajoute au moins le pseudo du créateur'); return; }
+    if (state.creators.some((c) => c !== editing && c.handle.toLowerCase() === data.handle.toLowerCase())) { showTab('info'); $('#f-handle').focus(); toast(`${data.handle} est déjà dans ta liste`); return; }
     if (editing) {
-      if (editing.stage !== data.stage && data.last === editing.last) data.last = today();
+      if (editing.stage !== data.stage) { if (data.last === editing.last) data.last = today(); addLog(editing, `Passé à « ${STAGES[SI[data.stage]].label} »`); }
+      const added = data.sales.length - editing.sales.length;
+      if (added > 0) addLog(editing, added > 1 ? `${added} ventes ajoutées` : 'Vente ajoutée');
       Object.assign(editing, data); commit('Fiche enregistrée');
     } else {
-      state.creators.push({ id: uid(), ...data }); commit(`${data.handle} ajouté`);
+      const c = { id: uid(), ...data, log: [] }; addLog(c, 'Ajouté à la liste');
+      state.creators.push(c); commit(`${data.handle} ajouté`);
     }
     dlg.close();
   });
   $('#done-btn').addEventListener('click', () => { $('#f-last').value = today(); if (editing) { editing.last = today(); commit('Action notée pour aujourd’hui'); } });
   $('#del-btn').addEventListener('click', () => {
     if (!delArmed) { delArmed = true; $('#del-btn').textContent = 'Confirmer la suppression'; return; }
-    state.creators = state.creators.filter((c) => c !== editing); commit('Créateur supprimé'); dlg.close();
+    const snap = snapshot(), h = editing.handle;
+    state.creators = state.creators.filter((c) => c !== editing); dlg.close(); commit(`${h} supprimé`, () => restore(snap));
   });
   $('#dlg-close').addEventListener('click', () => dlg.close());
+
+  const TPL_LABEL = { invite: 'Invitation', relance: 'Relance', brief: 'Brief vidéo', merci: 'Remerciement' };
+  $('#sent-btn').addEventListener('click', () => {
+    if (!editing) return;
+    const snap = snapshot();
+    editing.last = today(); $('#f-last').value = today();
+    addLog(editing, `Message envoyé : ${TPL_LABEL[tpl]}`);
+    if (tpl === 'invite' && editing.stage === 'trouve') { editing.stage = 'contacte'; $('#f-stage').value = 'contacte'; addLog(editing, 'Passé à « Contactés »'); }
+    dlg.close();
+    commit(`${editing.handle} : message noté`, () => restore(snap));
+  });
+
+  /* ---------- Copier pour Excel ---------- */
+  const COLS = ['Pseudo', 'Catégorie', 'Abonnés', 'Produit', 'Commission (%)', 'Coût échantillon (€)', 'Étape', 'Dernière action', 'Ventes (€)', 'Commission due (€)', 'Notes'];
+  $('#export-btn').addEventListener('click', async () => {
+    const clean = (v) => String(v ?? '').replace(/[\t\r\n]+/g, ' ');
+    const lines = [COLS.join('\t')].concat(state.creators.map((c) => [c.handle, c.cat, c.followers, c.product, c.commission, c.cost, STAGES[SI[c.stage]].label, c.last, total(c), Math.round(comm(c)), c.notes].map(clean).join('\t')));
+    const text = lines.join('\n');
+    try { await navigator.clipboard.writeText(text); toast(`${state.creators.length} créateurs copiés : colle-les dans Excel ou Google Sheets`); }
+    catch (e) {
+      openImport(); $('#imp-title').textContent = 'Copier ta liste'; $('#imp-text').value = text; $('#imp-text').select();
+      toast('Texte sélectionné : fais Ctrl+C pour le copier');
+    }
+  });
+
+  /* ---------- Import ---------- */
+  const imp = $('#imp');
+  let parsed = [];
+  function openImport() {
+    $('#imp-title').textContent = 'Importer des créateurs';
+    $('#imp-text').value = ''; parsed = []; previewImport();
+    $('#imp-replace-wrap').hidden = !usingDemo; $('#imp-replace').checked = usingDemo;
+    imp.showModal();
+  }
+  $('#imp-open').addEventListener('click', openImport);
+  $('#imp-close').addEventListener('click', () => imp.close());
+  $('#imp-cancel').addEventListener('click', () => imp.close());
+
+  function splitLine(line, sep) {
+    if (sep === '\t') return line.split('\t').map((s) => s.trim());
+    const out = []; let cur = '', q = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') { if (q && line[i + 1] === '"') { cur += '"'; i++; } else q = !q; }
+      else if (ch === sep && !q) { out.push(cur.trim()); cur = ''; }
+      else cur += ch;
+    }
+    out.push(cur.trim()); return out;
+  }
+  const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  // L'ordre compte : « Nombre d'abonnés » doit être reconnu avant le motif « nom » du pseudo
+  const FIELD = [
+    ['followers', /abonn|follower|audience/],
+    ['cat', /categ|niche|univers/],
+    ['product', /produit|product|article/],
+    ['commission', /commission|%|taux/],
+    ['stage', /etape|statut|status|stade/],
+    ['notes', /note|comment|remarque/],
+    ['handle', /pseudo|handle|tiktok|createur|compte|nom|user/],
+  ];
+  function parseFollowers(v) {
+    const s = norm(v).replace(/\s/g, '').replace(',', '.'); const n = parseFloat(s);
+    if (isNaN(n)) return 0;
+    return Math.round(s.includes('m') ? n * 1e6 : s.includes('k') ? n * 1e3 : n);
+  }
+  function parseStage(v) {
+    const s = norm(v);
+    if (/vente|vend/.test(s)) return 'vend';
+    if (/video|post|publi/.test(s)) return 'video';
+    if (/echant|colis|envoy/.test(s)) return 'echantillon';
+    if (/contact|relanc|dm|message/.test(s)) return 'contacte';
+    return 'trouve';
+  }
+  function parseCat(v) { const s = norm(v); return CATS.find((c) => norm(c) === s) || (v ? v.charAt(0).toUpperCase() + v.slice(1) : 'Autre'); }
+  function parseImport(text) {
+    const lines = text.split(/\r?\n/).filter((l) => l.trim());
+    if (!lines.length) return [];
+    const first = lines[0], sep = first.includes('\t') ? '\t' : (first.split(';').length > first.split(',').length ? ';' : ',');
+    let rows = lines.map((l) => splitLine(l, sep)), map = null;
+    const head = rows[0].map(norm);
+    if (head.some((h) => FIELD.some(([, re]) => re.test(h)) && !/^@/.test(h))) {
+      map = {}; head.forEach((h, i) => { const f = FIELD.find(([k, re]) => re.test(h) && !(k in map)); if (f) map[f[0]] = i; });
+      rows = rows.slice(1);
+    }
+    if (!map || !('handle' in map)) map = { handle: 0, followers: 1, cat: 2, product: 3, commission: 4 };
+    const get = (r, k) => (k in map ? r[map[k]] || '' : '');
+    return rows.map((r) => ({
+      handle: at(get(r, 'handle')), followers: parseFollowers(get(r, 'followers')), cat: parseCat(get(r, 'cat')),
+      product: get(r, 'product'), commission: parseFloat(String(get(r, 'commission')).replace(',', '.')) || 15,
+      stage: parseStage(get(r, 'stage')), notes: get(r, 'notes'),
+    })).filter((c) => c.handle.length > 1);
+  }
+  function previewImport() {
+    parsed = parseImport($('#imp-text').value);
+    const replace = $('#imp-replace').checked && usingDemo;
+    const existing = new Set((replace ? [] : state.creators).map((c) => c.handle.toLowerCase()));
+    const seen = new Set();
+    parsed.forEach((c) => { const k = c.handle.toLowerCase(); c.dup = existing.has(k) || seen.has(k); seen.add(k); });
+    const fresh = parsed.filter((c) => !c.dup), dups = parsed.length - fresh.length;
+    const box = $('#imp-preview');
+    box.hidden = !$('#imp-text').value.trim();
+    box.innerHTML = parsed.length
+      ? `<b>${fresh.length} créateur${fresh.length > 1 ? 's' : ''} prêt${fresh.length > 1 ? 's' : ''} à importer${dups ? ` · ${dups} déjà dans ta liste, ignoré${dups > 1 ? 's' : ''}` : ''}</b>
+         <div class="table-wrap"><table><thead><tr><th>Pseudo</th><th>Abonnés</th><th>Catégorie</th><th>Produit</th><th>Comm.</th><th>Étape</th></tr></thead><tbody>${
+           fresh.slice(0, 5).map((c) => `<tr><td>${esc(c.handle)}</td><td>${kFmt(c.followers)}</td><td>${esc(c.cat)}</td><td>${esc(c.product) || '—'}</td><td>${c.commission} %</td><td>${STAGES[SI[c.stage]].label}</td></tr>`).join('')}</tbody></table></div>
+         ${fresh.length > 5 ? `<span class="hint">et ${fresh.length - 5} autre${fresh.length - 5 > 1 ? 's' : ''}</span>` : ''}`
+      : 'Aucun pseudo reconnu. Vérifie que la première colonne contient les pseudos TikTok, ou ajoute une ligne de titres.';
+    $('#imp-go').disabled = !fresh.length;
+    $('#imp-go').textContent = fresh.length ? `Importer ${fresh.length} créateur${fresh.length > 1 ? 's' : ''}` : 'Importer';
+  }
+  $('#imp-text').addEventListener('input', previewImport);
+  $('#imp-replace').addEventListener('change', previewImport);
+  function readFile(file) {
+    if (!file) return;
+    const r = new FileReader();
+    r.onload = () => { $('#imp-text').value = String(r.result || ''); previewImport(); };
+    r.readAsText(file);
+  }
+  $('#imp-file').addEventListener('change', (e) => readFile(e.target.files[0]));
+  const drop = $('#imp-drop');
+  drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('over'); });
+  drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+  drop.addEventListener('drop', (e) => { e.preventDefault(); drop.classList.remove('over'); readFile(e.dataTransfer.files[0]); });
+  $('#imp-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const fresh = parsed.filter((c) => !c.dup); if (!fresh.length) return;
+    const snap = snapshot(), wasDemo = usingDemo;
+    if ($('#imp-replace').checked && usingDemo) state.creators = [];
+    usingDemo = false;
+    fresh.forEach(({ dup, ...c }) => {
+      const cr = { id: uid(), ...c, cost: 15, last: today(), sales: [], log: [] };
+      addLog(cr, 'Importé'); state.creators.push(cr);
+    });
+    imp.close(); go('createurs');
+    commit(`${fresh.length} créateur${fresh.length > 1 ? 's' : ''} importé${fresh.length > 1 ? 's' : ''}`, () => { usingDemo = wasDemo; restore(snap); });
+  });
 
   /* ---------- Réglages ---------- */
   $('#s-brand').addEventListener('input', (e) => { state.brand = e.target.value; save(); });
   $('#s-name').addEventListener('input', (e) => { state.name = e.target.value; save(); renderDashboard(); });
-  $('#search').addEventListener('input', renderBoard);
+  ['#search', '#flt-cat', '#flt-prod', '#flt-alert'].forEach((s) => $(s).addEventListener(s === '#search' ? 'input' : 'change', renderBoard));
   let clearArmed = false;
   $('#clear-all').addEventListener('click', () => {
     if (!clearArmed) { clearArmed = true; $('#clear-all').textContent = 'Confirmer : tout effacer'; return; }
@@ -806,8 +1032,13 @@ textarea { resize: vertical; }
   $('#show-chart').addEventListener('click', () => { $('#weekly').hidden = false; $('#weekly-table').hidden = true; $('#show-chart').setAttribute('aria-pressed', 'true'); $('#show-table').setAttribute('aria-pressed', 'false'); weeklyChart(weeks()); });
   $('#show-table').addEventListener('click', () => { $('#weekly').hidden = true; $('#weekly-table').hidden = false; $('#show-chart').setAttribute('aria-pressed', 'false'); $('#show-table').setAttribute('aria-pressed', 'true'); });
 
-  let toastTimer;
-  function toast(msg) { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, 2200); }
+  let toastTimer, toastUndo = null;
+  function toast(msg, undo) {
+    const t = $('#toast'); $('#toast-msg').textContent = msg;
+    toastUndo = undo || null; $('#toast-undo').hidden = !undo; t.hidden = false;
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; toastUndo = null; }, undo ? 6000 : 2200);
+  }
+  $('#toast-undo').addEventListener('click', () => { const u = toastUndo; toastUndo = null; $('#toast').hidden = true; if (u) u(); });
   let rz; window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { if (!$('#view-tableau').hidden) weeklyChart(weeks()); }, 120); });
 
   load();

@@ -249,6 +249,24 @@ textarea { resize: vertical; }
 .btn-ai { background: var(--accent-soft); border-color: var(--accent); color: var(--ink); }
 .btn-ai:disabled { opacity: .7; cursor: progress; }
 
+/* Colis */
+.ship-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.ship-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.ship-list li { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 14px; background: var(--surface-2); }
+.ship-list .info { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.ship-list .info b, .ship-list .info small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ship-list .info small { color: var(--muted); }
+.ship-list li.empty { justify-content: center; color: var(--muted); font-size: 14px; background: transparent; border: 1px dashed var(--line); }
+.ship-list a { color: var(--ink); }
+.stock { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+.stock-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 14px; background: var(--surface-2); }
+.stock-name { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.stock-name b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.stock-name .low { font-size: 12px; font-weight: 700; color: var(--warn); }
+.ship-grid .panel-head { flex-wrap: nowrap; }
+.stock-row input { width: 76px; padding: 7px 9px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); text-align: right; font-variant-numeric: tabular-nums; }
+.ship-tag { font-size: 12px; font-weight: 600; color: var(--muted); }
+
 /* Filtres, import, historique */
 .filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .filters select { padding: 9px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); max-width: 220px; }
@@ -268,7 +286,7 @@ textarea { resize: vertical; }
 .toast { display: flex; align-items: center; gap: 14px; }
 .toast button { border: none; background: none; color: var(--bg); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; padding: 0; }
 
-@media (max-width: 1180px) { .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } .row-a, .row-b { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 1180px) { .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } .row-a, .row-b, .ship-grid { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 860px) {
   .app { grid-template-columns: minmax(0, 1fr); gap: 16px; }
   .side { position: static; min-height: 0; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 12px; padding: 12px; border-radius: 18px; }
@@ -296,6 +314,11 @@ textarea { resize: vertical; }
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="4" width="5" height="16" rx="1.5"/><rect x="10" y="4" width="5" height="10" rx="1.5"/><rect x="17" y="4" width="5" height="13" rx="1.5"/></svg>
         <span class="label">Créateurs</span>
         <span class="badge num" id="nav-badge" hidden>0</span>
+      </button>
+      <button type="button" data-view="colis">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7.5 12 3l9 4.5v9L12 21l-9-4.5z"/><path d="m3 7.5 9 4.5 9-4.5M12 12v9"/></svg>
+        <span class="label">Colis</span>
+        <span class="badge num" id="ship-badge" hidden>0</span>
       </button>
       <button type="button" data-view="inscrits" id="nav-leads" hidden>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 4h16v16H4z"/><path d="m4 6 8 7 8-7"/></svg>
@@ -416,6 +439,33 @@ textarea { resize: vertical; }
       <div class="board-scroll"><div class="board" id="board"></div></div>
     </section>
 
+    <section class="view" id="view-colis" aria-label="Colis" hidden>
+      <header class="page-head">
+        <div>
+          <p class="eyebrow">Échantillons</p>
+          <h1>Colis</h1>
+        </div>
+      </header>
+      <div class="ship-grid">
+        <article class="panel">
+          <div class="panel-head"><div><h2>À envoyer</h2><p>Adresse reçue, colis pas encore parti</p></div><span class="count" id="ship-n-todo"></span></div>
+          <ul class="ship-list" id="ship-todo"></ul>
+        </article>
+        <article class="panel">
+          <div class="panel-head"><div><h2>En route</h2><p>Colis expédiés, pas encore livrés</p></div><span class="count" id="ship-n-route"></span></div>
+          <ul class="ship-list" id="ship-route"></ul>
+        </article>
+        <article class="panel">
+          <div class="panel-head"><div><h2>Livrés, vidéo attendue</h2><p>Le créateur a reçu son colis mais n’a pas encore posté</p></div><span class="count" id="ship-n-done"></span></div>
+          <ul class="ship-list" id="ship-done"></ul>
+        </article>
+      </div>
+      <article class="panel">
+        <div class="panel-head"><div><h2>Stock d’échantillons</h2><p>Le stock baisse automatiquement à chaque colis marqué comme envoyé</p></div></div>
+        <div class="stock" id="stock"></div>
+      </article>
+    </section>
+
     <section class="view" id="view-inscrits" aria-label="Inscrits" hidden>
       <header class="page-head">
         <div>
@@ -444,6 +494,7 @@ textarea { resize: vertical; }
     </div>
     <div class="tabs" role="tablist">
       <button class="tab" type="button" role="tab" data-tab="info" aria-selected="true">Fiche</button>
+      <button class="tab" type="button" role="tab" data-tab="ship" aria-selected="false">Colis</button>
       <button class="tab" type="button" role="tab" data-tab="sales" aria-selected="false">Ventes</button>
       <button class="tab" type="button" role="tab" data-tab="msg" aria-selected="false">Messages</button>
     </div>
@@ -463,6 +514,23 @@ textarea { resize: vertical; }
         <p class="eyebrow">Historique</p>
         <ul class="log" id="log"></ul>
       </div>
+    </div>
+    <div class="dlg-body" data-pane="ship" hidden>
+      <label class="f" for="f-address">Adresse de livraison <textarea id="f-address" rows="3" placeholder="Prénom Nom&#10;12 rue des Lilas&#10;75011 Paris"></textarea></label>
+      <div class="grid2">
+        <label class="f" for="f-carrier">Transporteur <select id="f-carrier"></select></label>
+        <label class="f" for="f-tracking">Numéro de suivi <input id="f-tracking" placeholder="6A12345678901" autocomplete="off"></label>
+        <label class="f" for="f-sent">Envoyé le <input id="f-sent" type="date"></label>
+        <label class="f" for="f-delivered">Livré le <input id="f-delivered" type="date"></label>
+      </div>
+      <div class="msg-actions">
+        <a class="btn btn-sm" id="track-link" target="_blank" rel="noopener" hidden>Suivre le colis ↗</a>
+        <span style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-sm" type="button" id="ship-sent">Envoyé aujourd’hui</button>
+          <button class="btn btn-sm" type="button" id="ship-delivered">Livré aujourd’hui</button>
+        </span>
+      </div>
+      <p class="hint" id="ship-hint">Enregistre la fiche pour valider. Un colis marqué « envoyé » retire un échantillon du stock du produit.</p>
     </div>
     <div class="dlg-body" data-pane="sales" hidden>
       <div class="calc num" id="sales-calc"></div>
@@ -594,15 +662,16 @@ textarea { resize: vertical; }
       { handle: '@lea.glow', cat: 'Beauté', followers: 48200, commission: 15, product: 'Sérum vitamine C', cost: 14, stage: 'trouve', last: daysAgo(6), notes: 'Routines du matin, très bon taux d’engagement.', sales: [] },
       { handle: '@nico.unbox', cat: 'Tech', followers: 12800, commission: 12, product: 'Lampe LED de bureau', cost: 22, stage: 'trouve', last: daysAgo(1), notes: '', sales: [] },
       { handle: '@ines.makeup', cat: 'Beauté', followers: 96500, commission: 18, product: 'Sérum vitamine C', cost: 14, stage: 'contacte', last: daysAgo(4), notes: 'DM envoyé, pas encore de réponse.', sales: [] },
-      { handle: '@max.fitlife', cat: 'Sport', followers: 31000, commission: 15, product: 'Gourde isotherme', cost: 11, stage: 'contacte', last: daysAgo(1), notes: 'Intéressé, attend l’adresse d’envoi.', sales: [] },
-      { handle: '@sarah.cuisine', cat: 'Cuisine', followers: 22400, commission: 15, product: 'Set de couteaux', cost: 28, stage: 'echantillon', last: daysAgo(9), notes: 'Colis livré. Vidéo promise pour le week-end.', sales: [] },
-      { handle: '@tom.maison', cat: 'Maison', followers: 15700, commission: 12, product: 'Diffuseur d’huiles', cost: 18, stage: 'echantillon', last: daysAgo(2), notes: '', sales: [] },
+      { handle: '@max.fitlife', cat: 'Sport', followers: 31000, commission: 15, product: 'Gourde isotherme', cost: 11, stage: 'contacte', last: daysAgo(2), notes: 'Intéressé, a envoyé son adresse.', sales: [], ship: { address: 'Max Durand\n8 avenue Jean Jaurès\n69007 Lyon', carrier: 'laposte', tracking: '', sentAt: '', deliveredAt: '' } },
+      { handle: '@sarah.cuisine', cat: 'Cuisine', followers: 22400, commission: 15, product: 'Set de couteaux', cost: 28, stage: 'echantillon', last: daysAgo(9), notes: 'Vidéo promise pour le week-end.', sales: [], ship: { address: 'Sarah Martin\n3 rue des Tanneurs\n33000 Bordeaux', carrier: 'laposte', tracking: '6A12345678901', sentAt: daysAgo(11), deliveredAt: daysAgo(9) } },
+      { handle: '@tom.maison', cat: 'Maison', followers: 15700, commission: 12, product: 'Diffuseur d’huiles', cost: 18, stage: 'echantillon', last: daysAgo(2), notes: '', sales: [], ship: { address: 'Tom Leroy\n21 boulevard Carnot\n59000 Lille', carrier: 'mondialrelay', tracking: '48291037', sentAt: daysAgo(2), deliveredAt: '' } },
       { handle: '@julie.style', cat: 'Mode', followers: 67300, commission: 20, product: 'Sac bandoulière', cost: 24, stage: 'video', last: daysAgo(2), notes: 'Vidéo en ligne, bons commentaires.', sales: s([[6, 95], [2, 85]]) },
       { handle: '@chloe.home', cat: 'Maison', followers: 39800, commission: 12, product: 'Diffuseur d’huiles', cost: 18, stage: 'vend', last: daysAgo(4), notes: '', sales: s([[33, 120], [26, 160], [19, 140], [11, 110], [4, 110]]) },
       { handle: '@emma.skin', cat: 'Beauté', followers: 128000, commission: 18, product: 'Sérum vitamine C', cost: 14, stage: 'vend', last: daysAgo(3), notes: 'Top créatrice. Proposer une 2ᵉ vidéo.', sales: s([[40, 90], [31, 150], [24, 210], [17, 260], [10, 240], [3, 290]]) },
       { handle: '@leo.gadget', cat: 'Tech', followers: 54100, commission: 12, product: 'Lampe LED de bureau', cost: 22, stage: 'vend', last: daysAgo(5), notes: '', sales: s([[47, 70], [36, 130], [22, 180], [13, 220], [5, 260]]) },
     ].map((c) => ({ id: uid(), ...c }));
   }
+  const demoStock = () => ({ 'Sérum vitamine C': 12, 'Lampe LED de bureau': 4, 'Gourde isotherme': 2, 'Set de couteaux': 6, 'Diffuseur d’huiles': 9, 'Sac bandoulière': 5 });
 
   let state, usingDemo;
   function load() {
@@ -610,7 +679,7 @@ textarea { resize: vertical; }
       const raw = localStorage.getItem(KEY);
       if (raw) { state = JSON.parse(raw); usingDemo = !!state.demo; return; }
     } catch (e) { /* stockage indisponible : exemples en mémoire */ }
-    state = { creators: demo(), brand: '', name: '', demo: true }; usingDemo = true;
+    state = { creators: demo(), stock: demoStock(), brand: '', name: '', demo: true }; usingDemo = true;
   }
   function save() {
     state.demo = usingDemo;
@@ -723,7 +792,26 @@ textarea { resize: vertical; }
 
   const total = (c) => c.sales.reduce((s, x) => s + (+x.a || 0), 0);
   const comm = (c, amount = total(c)) => amount * (+c.commission || 0) / 100;
-  const alertFor = (c) => { const r = RULES[c.stage]; return r && daysSince(c.last) >= r[0] ? r[1] : null; };
+  // Avec un suivi de colis, l'alerte part des dates réelles d'envoi et de livraison
+  const alertFor = (c) => {
+    const s = c.ship || {};
+    if (s.address && SI[c.stage] <= 2) {
+      if (s.deliveredAt) return daysSince(s.deliveredAt) >= 7 ? 'Vidéo en retard' : null;
+      if (s.sentAt) return daysSince(s.sentAt) >= 6 ? 'Colis à vérifier' : null;
+      return daysSince(c.last) >= 2 ? 'Colis à envoyer' : null;
+    }
+    const r = RULES[c.stage]; return r && daysSince(c.last) >= r[0] ? r[1] : null;
+  };
+  const CARRIERS = {
+    laposte: { label: 'La Poste / Colissimo', url: (n) => `https://www.laposte.fr/outils/suivre-vos-envois?code=${encodeURIComponent(n)}` },
+    chronopost: { label: 'Chronopost', url: (n) => `https://www.chronopost.fr/tracking-no-cms/suivi-page?listeNumerosLT=${encodeURIComponent(n)}` },
+    mondialrelay: { label: 'Mondial Relay', url: () => 'https://www.mondialrelay.fr/suivi-de-colis/' },
+    dhl: { label: 'DHL', url: (n) => `https://www.dhl.com/fr-fr/home/suivi.html?tracking-id=${encodeURIComponent(n)}` },
+    ups: { label: 'UPS', url: (n) => `https://www.ups.com/track?tracknum=${encodeURIComponent(n)}` },
+    autre: { label: 'Autre', url: null },
+  };
+  const trackUrl = (s) => (s && s.tracking && CARRIERS[s.carrier] && CARRIERS[s.carrier].url) ? CARRIERS[s.carrier].url(s.tracking) : null;
+  const shipStatus = (c) => { const s = c.ship || {}; return s.deliveredAt ? 'done' : s.sentAt ? 'route' : s.address ? 'todo' : null; };
   const colorFor = (h) => AV[[...h].reduce((a, ch) => a + ch.charCodeAt(0), 0) % AV.length];
   const avatar = (c) => `<span class="avatar" style="background:${colorFor(c.handle)}">${esc(c.handle.replace('@', '').charAt(0).toUpperCase() || '?')}</span>`;
   const byId = (id) => state.creators.find((c) => c.id === id);
@@ -896,23 +984,64 @@ textarea { resize: vertical; }
       <div class="card-top">${avatar(c)}<span class="card-id"><b>${esc(c.handle)}</b><small>${esc(c.cat)} · ${kFmt(+c.followers)} abonnés</small></span></div>
       ${c.product ? `<small class="hint">${esc(c.product)} · ${+c.commission || 0} %</small>` : ''}
       ${t ? `<div class="money num"><b>${eur(t)}</b><span>${eur(comm(c))} de comm.</span></div>` : ''}
+      ${SI[c.stage] <= 2 && shipStatus(c) ? `<span class="ship-tag">${{ todo: 'Colis à préparer', route: daysSince(c.ship.sentAt) ? `Colis en route depuis ${daysSince(c.ship.sentAt)} j` : 'Colis parti aujourd’hui', done: daysSince(c.ship.deliveredAt) ? `Colis livré il y a ${daysSince(c.ship.deliveredAt)} j` : 'Colis livré aujourd’hui' }[shipStatus(c)]}</span>` : ''}
       <div class="card-foot">${a ? `<span class="pill">${a}</span>` : `<span>${d === 0 ? 'aujourd’hui' : 'il y a ' + d + ' j'}</span>`}
       ${i < STAGES.length - 1 ? `<button class="next" type="button" data-next="${c.id}">Suivant →</button>` : ''}</div>
     </div>`;
   }
 
+  function shipRow(c, kind) {
+    const s = c.ship, url = trackUrl(s), a = alertFor(c);
+    const sub = kind === 'todo' ? esc((s.address || '').split('\n').slice(-1)[0])
+      : kind === 'route' ? `${esc(CARRIERS[s.carrier]?.label || 'Transporteur')} · ${url ? `<a href="${url}" target="_blank" rel="noopener">${esc(s.tracking)} ↗</a>` : esc(s.tracking || 'sans numéro')}`
+      : (daysSince(s.deliveredAt) ? `Livré il y a ${daysSince(s.deliveredAt)} j` : 'Livré aujourd’hui');
+    const btn = kind === 'todo' ? `<button class="btn btn-sm" type="button" data-ship-open="${c.id}">Préparer</button>`
+      : kind === 'route' ? `<button class="btn btn-sm" type="button" data-ship-delivered="${c.id}">Livré</button>`
+      : `<button class="btn btn-sm" type="button" data-ship-relance="${c.id}">Relancer</button>`;
+    return `<li>${avatar(c)}<span class="info"><b>${esc(c.handle)}${c.product ? ' · ' + esc(c.product) : ''}</b><small>${sub}</small>${a ? `<span class="pill" style="align-self:flex-start;margin-top:4px">${a}</span>` : ''}</span>${btn}</li>`;
+  }
+  function renderShip() {
+    const groups = { todo: [], route: [], done: [] };
+    state.creators.forEach((c) => { const k = shipStatus(c); if (k && (k !== 'done' || SI[c.stage] <= 2)) groups[k].push(c); });
+    const empty = { todo: 'Aucun colis à préparer.', route: 'Aucun colis en route.', done: 'Aucune vidéo en attente.' };
+    Object.entries(groups).forEach(([k, list]) => {
+      $(`#ship-${k}`).innerHTML = list.length ? list.map((c) => shipRow(c, k)).join('') : `<li class="empty">${empty[k]}</li>`;
+      $(`#ship-n-${k}`).textContent = list.length;
+    });
+    const b = $('#ship-badge'); b.hidden = !groups.todo.length; b.textContent = groups.todo.length;
+    state.stock = state.stock || {};
+    const products = [...new Set([...Object.keys(state.stock), ...state.creators.map((c) => c.product).filter(Boolean)])].sort();
+    $('#stock').innerHTML = products.length ? products.map((p) => {
+      const n = state.stock[p];
+      return `<div class="stock-row"><span class="stock-name" title="${esc(p)}"><b>${esc(p)}</b>${n !== undefined && n <= 2 ? '<small class="low">Stock bas : pense à réapprovisionner</small>' : ''}</span><input type="number" min="0" step="1" value="${n ?? ''}" placeholder="—" data-stock="${esc(p)}" aria-label="Stock de ${esc(p)}"></div>`;
+    }).join('') : '<p class="muted">Ajoute un produit sur la fiche d’un créateur pour suivre son stock.</p>';
+  }
+  $('#view-colis').addEventListener('click', (e) => {
+    const o = e.target.closest('[data-ship-open]'); if (o) { openDialog(o.dataset.shipOpen, 'ship'); return; }
+    const r = e.target.closest('[data-ship-relance]'); if (r) { openDialog(r.dataset.shipRelance, 'msg', 'relance'); return; }
+    const d = e.target.closest('[data-ship-delivered]');
+    if (d) { const c = byId(d.dataset.shipDelivered), snap = snapshot(); c.ship.deliveredAt = today(); c.last = today(); addLog(c, 'Colis livré'); commit(`${c.handle} : colis livré`, () => restore(snap)); }
+  });
+  $('#stock').addEventListener('change', (e) => {
+    const i = e.target.closest('[data-stock]'); if (!i) return;
+    const v = i.value === '' ? undefined : Math.max(0, Math.round(+i.value));
+    if (v === undefined) delete state.stock[i.dataset.stock]; else state.stock[i.dataset.stock] = v;
+    save(); renderShip();
+  });
+
   function render() {
-    renderDashboard(); renderBoard();
+    renderDashboard(); renderBoard(); renderShip();
     $('#data-note').textContent = usingDemo ? 'Données d’exemple, enregistrées dans ce navigateur.' : 'Tes données sont enregistrées dans ce navigateur.';
   }
   function commit(msg, undo) { save(); render(); if (msg) toast(msg, undo); }
 
   /* ---------- Navigation ---------- */
   function go(view) {
-    if (!['tableau', 'createurs', 'inscrits'].includes(view) || (view === 'inscrits' && !isAdmin)) view = 'tableau';
+    if (!['tableau', 'createurs', 'colis', 'inscrits'].includes(view) || (view === 'inscrits' && !isAdmin)) view = 'tableau';
     $('#view-tableau').hidden = view !== 'tableau';
     $('#view-createurs').hidden = view !== 'createurs';
     $('#view-inscrits').hidden = view !== 'inscrits';
+    $('#view-colis').hidden = view !== 'colis';
     if (view === 'inscrits') loadLeads();
     $$('.nav button').forEach((b) => { if (b.dataset.view === view) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
     try { history.replaceState(null, '', '#' + view); } catch (e) {}
@@ -940,7 +1069,8 @@ textarea { resize: vertical; }
   });
   board.addEventListener('keydown', (e) => { if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('card')) { e.preventDefault(); openDialog(e.target.dataset.id); } });
   $('#todo').addEventListener('click', (e) => {
-    const w = e.target.closest('[data-write]'); if (w) { const c = byId(w.dataset.write); openDialog(c.id, 'msg', c.stage === 'trouve' ? 'invite' : 'relance'); return; }
+    const w = e.target.closest('[data-write]');
+    if (w) { const c = byId(w.dataset.write), a = alertFor(c); if (/^Colis/.test(a || '')) openDialog(c.id, 'ship'); else openDialog(c.id, 'msg', c.stage === 'trouve' ? 'invite' : 'relance'); return; }
     const d = e.target.closest('[data-done]');
     if (d) { const c = byId(d.dataset.done), snap = snapshot(); c.last = today(); addLog(c, 'Action faite'); commit(`${c.handle} : action notée`, () => restore(snap)); }
   });
@@ -962,6 +1092,14 @@ textarea { resize: vertical; }
   let editing = null, draftSales = [], tpl = 'invite', delArmed = false;
   $('#f-cat').innerHTML = CATS.map((c) => `<option>${c}</option>`).join('');
   $('#f-stage').innerHTML = STAGES.map((s) => `<option value="${s.id}">${s.label}</option>`).join('');
+  $('#f-carrier').innerHTML = Object.entries(CARRIERS).map(([k, v]) => `<option value="${k}">${v.label}</option>`).join('');
+  function updateTrack() {
+    const url = trackUrl({ carrier: $('#f-carrier').value, tracking: $('#f-tracking').value.trim() });
+    const a = $('#track-link'); a.hidden = !url; if (url) a.href = url;
+  }
+  ['#f-carrier', '#f-tracking'].forEach((s) => $(s).addEventListener('input', updateTrack));
+  $('#ship-sent').addEventListener('click', () => { $('#f-sent').value = today(); if (SI[$('#f-stage').value] < 2) $('#f-stage').value = 'echantillon'; });
+  $('#ship-delivered').addEventListener('click', () => { $('#f-delivered').value = today(); if (!$('#f-sent').value) $('#f-sent').value = today(); if (SI[$('#f-stage').value] < 2) $('#f-stage').value = 'echantillon'; });
 
   function openDialog(id, tab = 'info', template) {
     editing = id ? byId(id) : null;
@@ -974,6 +1112,9 @@ textarea { resize: vertical; }
     $('#f-handle').value = c.handle; $('#f-cat').value = c.cat; $('#f-followers').value = c.followers;
     $('#f-commission').value = c.commission; $('#f-product').value = c.product; $('#f-cost').value = c.cost;
     $('#f-stage').value = c.stage; $('#f-last').value = c.last; $('#f-notes').value = c.notes;
+    const sh = c.ship || {};
+    $('#f-address').value = sh.address || ''; $('#f-carrier').value = sh.carrier || 'laposte'; $('#f-tracking').value = sh.tracking || '';
+    $('#f-sent').value = sh.sentAt || ''; $('#f-delivered').value = sh.deliveredAt || ''; updateTrack();
     $('#sale-date').value = today(); $('#sale-amount').value = '';
     $('#del-btn').hidden = !editing; $('#done-btn').hidden = !editing; $('#sent-btn').hidden = !editing;
     const tk = $('#dlg-tiktok'); tk.hidden = !editing;
@@ -992,6 +1133,7 @@ textarea { resize: vertical; }
       handle: at($('#f-handle').value), cat: $('#f-cat').value, followers: +$('#f-followers').value || 0,
       commission: +$('#f-commission').value || 0, product: $('#f-product').value.trim(), cost: +$('#f-cost').value || 0,
       stage: $('#f-stage').value, last: $('#f-last').value || today(), notes: $('#f-notes').value.trim(), sales: draftSales,
+      ship: { address: $('#f-address').value.trim(), carrier: $('#f-carrier').value, tracking: $('#f-tracking').value.trim(), sentAt: $('#f-sent').value, deliveredAt: $('#f-delivered').value },
     };
   }
   function showTab(t) {
@@ -1047,13 +1189,22 @@ textarea { resize: vertical; }
     const data = current();
     if (!data.handle) { showTab('info'); $('#f-handle').focus(); toast('Ajoute au moins le pseudo du créateur'); return; }
     if (state.creators.some((c) => c !== editing && c.handle.toLowerCase() === data.handle.toLowerCase())) { showTab('info'); $('#f-handle').focus(); toast(`${data.handle} est déjà dans ta liste`); return; }
+    const before = (editing && editing.ship) || {};
+    const shipLogs = [];
+    if (data.ship.sentAt && !before.sentAt) {
+      shipLogs.push('Colis envoyé');
+      state.stock = state.stock || {};
+      if (data.product && state.stock[data.product] !== undefined) state.stock[data.product] = Math.max(0, state.stock[data.product] - 1);
+    }
+    if (data.ship.deliveredAt && !before.deliveredAt) shipLogs.push('Colis livré');
     if (editing) {
+      shipLogs.forEach((t) => addLog(editing, t));
       if (editing.stage !== data.stage) { if (data.last === editing.last) data.last = today(); addLog(editing, `Passé à « ${STAGES[SI[data.stage]].label} »`); }
       const added = data.sales.length - editing.sales.length;
       if (added > 0) addLog(editing, added > 1 ? `${added} ventes ajoutées` : 'Vente ajoutée');
       Object.assign(editing, data); commit('Fiche enregistrée');
     } else {
-      const c = { id: uid(), ...data, log: [] }; addLog(c, 'Ajouté à la liste');
+      const c = { id: uid(), ...data, log: [] }; addLog(c, 'Ajouté à la liste'); shipLogs.forEach((t) => addLog(c, t));
       state.creators.push(c); commit(`${data.handle} ajouté`);
     }
     dlg.close();
@@ -1105,10 +1256,10 @@ textarea { resize: vertical; }
   });
 
   /* ---------- Copier pour Excel ---------- */
-  const COLS = ['Pseudo', 'Catégorie', 'Abonnés', 'Produit', 'Commission (%)', 'Coût échantillon (€)', 'Étape', 'Dernière action', 'Ventes (€)', 'Commission due (€)', 'Notes'];
+  const COLS = ['Pseudo', 'Catégorie', 'Abonnés', 'Produit', 'Commission (%)', 'Coût échantillon (€)', 'Étape', 'Dernière action', 'Ventes (€)', 'Commission due (€)', 'Adresse', 'Transporteur', 'Numéro de suivi', 'Envoyé le', 'Livré le', 'Notes'];
   $('#export-btn').addEventListener('click', async () => {
     const clean = (v) => String(v ?? '').replace(/[\t\r\n]+/g, ' ');
-    const lines = [COLS.join('\t')].concat(state.creators.map((c) => [c.handle, c.cat, c.followers, c.product, c.commission, c.cost, STAGES[SI[c.stage]].label, c.last, total(c), Math.round(comm(c)), c.notes].map(clean).join('\t')));
+    const lines = [COLS.join('\t')].concat(state.creators.map((c) => [c.handle, c.cat, c.followers, c.product, c.commission, c.cost, STAGES[SI[c.stage]].label, c.last, total(c), Math.round(comm(c)), (c.ship || {}).address, CARRIERS[(c.ship || {}).carrier]?.label || '', (c.ship || {}).tracking, (c.ship || {}).sentAt, (c.ship || {}).deliveredAt, c.notes].map(clean).join('\t')));
     const text = lines.join('\n');
     try { await navigator.clipboard.writeText(text); toast(`${state.creators.length} créateurs copiés : colle-les dans Excel ou Google Sheets`); }
     catch (e) {
@@ -1239,7 +1390,7 @@ textarea { resize: vertical; }
     clearArmed = false; $('#clear-all').textContent = 'Tout effacer';
     state.creators = []; usingDemo = false; commit('Tableau vidé : ajoute ton premier créateur');
   });
-  $('#reset-demo').addEventListener('click', () => { state.creators = demo(); usingDemo = true; commit('Exemples rechargés'); });
+  $('#reset-demo').addEventListener('click', () => { state.creators = demo(); state.stock = demoStock(); usingDemo = true; commit('Exemples rechargés'); });
   $('#show-chart').addEventListener('click', () => { $('#weekly').hidden = false; $('#weekly-table').hidden = true; $('#show-chart').setAttribute('aria-pressed', 'true'); $('#show-table').setAttribute('aria-pressed', 'false'); weeklyChart(weeks()); });
   $('#show-table').addEventListener('click', () => { $('#weekly').hidden = true; $('#weekly-table').hidden = false; $('#show-chart').setAttribute('aria-pressed', 'false'); $('#show-table').setAttribute('aria-pressed', 'true'); });
 

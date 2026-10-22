@@ -26,6 +26,7 @@ MVP d’un CRM pour les vendeurs **TikTok Shop** : suivre ses créateurs affili�
 - **Import et export** : coller une liste depuis Excel ou Google Sheets (ou déposer un CSV), et copier toute la liste pour la recoller dans un tableur.
 - **Filtres** : catégorie, produit, « à relancer seulement ».
 - **Historique** par créateur, bouton « J’ai envoyé ce message » et annulation de la dernière action.
+- **Colis d’échantillons** : adresse, transporteur, numéro de suivi cliquable, dates d’envoi et de livraison, vue « À envoyer / En route / Livrés », stock d’échantillons par produit (baisse automatique à chaque envoi). L’alerte « Vidéo en retard » part de la date de livraison réelle.
 - **Inscrits** (compte administrateur) : la liste des marques inscrites depuis la page de vente.
 - **Fiche créateur** : catégorie, abonnés, commission, produit, ventes, notes.
 

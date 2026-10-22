@@ -23,3 +23,13 @@ create policy "Modifier ses données" on public.app_state
   for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "Supprimer ses données" on public.app_state
   for delete using (auth.uid() = user_id);
+
+-- Compteur d’utilisation de la rédaction par IA (limite quotidienne par compte).
+-- Seule la fonction serveur (clé service_role) y accède : aucune règle d’accès pour les utilisateurs.
+create table if not exists public.ai_usage (
+  user_id uuid not null references auth.users (id) on delete cascade,
+  day     date not null,
+  count   integer not null default 0,
+  primary key (user_id, day)
+);
+alter table public.ai_usage enable row level security;

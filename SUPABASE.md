@@ -50,6 +50,33 @@ La clé **anon public** peut être partagée : elle est faite pour être dans le
 
 > ⚠️ Ne partage jamais la clé **service_role** : elle donne un accès total à la base.
 
+## 6. Activer la rédaction par IA (facultatif)
+
+Le bouton « ✨ Rédiger avec l’IA » (onglet **Messages** de chaque créateur) écrit un message sur mesure avec Claude.
+La clé de l’IA reste sur Supabase : elle n’est jamais envoyée au navigateur.
+
+1. **Clé d’API Anthropic** : crée un compte sur [console.anthropic.com](https://console.anthropic.com), ajoute un moyen de paiement, puis **API Keys** → **Create Key**.
+   Dans **Limits**, fixe une limite de dépense mensuelle (par exemple 20 €) pour ne jamais avoir de surprise.
+2. **Créer la fonction** : dans Supabase, **Edge Functions** → **Deploy a new function** → **Via Editor**.
+   - Nom : `generate-message` (exactement).
+   - Colle le contenu de [`supabase/functions/generate-message/index.ts`](supabase/functions/generate-message/index.ts), puis **Deploy**.
+3. **Ajouter la clé** : **Edge Functions** → **Secrets** → **Add new secret**.
+   - Nom : `ANTHROPIC_API_KEY`
+   - Valeur : la clé de l’étape 1.
+   - Facultatif : `AI_DAILY_LIMIT` pour changer la limite de messages IA par compte et par jour (60 par défaut).
+4. Vérifie que le script SQL de l’étape 2 a bien été relancé avec la table `ai_usage` (il peut être exécuté plusieurs fois sans risque).
+
+Avec l’outil en ligne de commande Supabase, l’équivalent est :
+
+```bash
+supabase functions deploy generate-message
+supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
+```
+
+**Coût** : environ 1 centime par message rédigé. La limite quotidienne par compte et la limite de dépense Anthropic protègent contre les abus.
+
+**Sécurité** : si une demande est bloquée par un filtre de sécurité de l’IA, la fonction réessaie automatiquement avec un autre modèle Claude ; si elle est encore refusée, l’utilisateur voit un message lui demandant de reformuler.
+
 ## Bon à savoir
 
 - **E-mails de connexion** : Supabase envoie gratuitement quelques e-mails par heure seulement. C’est suffisant pour les premiers clients. Au-delà, branche un service d’envoi d’e-mails (par exemple Resend ou Brevo) dans **Authentication** → **Emails** → **SMTP Settings**.

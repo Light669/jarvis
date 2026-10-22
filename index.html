@@ -244,6 +244,11 @@ textarea { resize: vertical; }
 .sync[data-s="error"]::before { background: #FF5C7E; }
 .account { font-size: 12px; color: #ADA2BC; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
+.ai-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.ai-row input { flex: 1; min-width: 200px; padding: 9px 11px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); }
+.btn-ai { background: var(--accent-soft); border-color: var(--accent); color: var(--ink); }
+.btn-ai:disabled { opacity: .7; cursor: progress; }
+
 /* Filtres, import, historique */
 .filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .filters select { padding: 9px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); max-width: 220px; }
@@ -455,6 +460,11 @@ textarea { resize: vertical; }
         <button class="btn btn-sm" type="button" data-tpl="brief" aria-pressed="false">Brief vidéo</button>
         <button class="btn btn-sm" type="button" data-tpl="merci" aria-pressed="false">Remerciement</button>
       </div>
+      <div class="ai-row">
+        <input id="ai-instr" placeholder="Consigne pour l’IA (facultatif) : plus court, ton plus pro, parle du code promo…" aria-label="Consigne pour l’IA">
+        <button class="btn btn-ai" type="button" id="ai-btn">✨ Rédiger avec l’IA</button>
+      </div>
+      <p class="hint" id="ai-note"></p>
       <label class="f" for="msg-out">Message prêt à envoyer (tu peux le modifier) <textarea id="msg-out"></textarea></label>
       <div class="msg-actions">
         <span class="hint">Copie le message, colle-le dans TikTok, puis indique-le ici.</span>
@@ -938,7 +948,7 @@ textarea { resize: vertical; }
     $$('[data-tab]').forEach((b) => b.setAttribute('aria-selected', b.dataset.tab === t));
     $$('[data-pane]').forEach((p) => { p.hidden = p.dataset.pane !== t; });
     $('#copy-btn').hidden = t !== 'msg';
-    if (t === 'msg') writeMessage();
+    if (t === 'msg') { writeMessage(); aiNote(); }
     if (t === 'sales') renderSales();
   }
   $$('[data-tab]').forEach((b) => b.addEventListener('click', () => showTab(b.dataset.tab)));
@@ -963,7 +973,7 @@ textarea { resize: vertical; }
   });
 
   $$('[data-tpl]').forEach((b) => b.addEventListener('click', () => {
-    tpl = b.dataset.tpl; $$('[data-tpl]').forEach((x) => x.setAttribute('aria-pressed', x === b)); writeMessage();
+    tpl = b.dataset.tpl; $$('[data-tpl]').forEach((x) => x.setAttribute('aria-pressed', x === b)); writeMessage(); aiNote();
   }));
   function writeMessage() {
     const c = current(), h = c.handle || '@pseudo';
@@ -1005,6 +1015,33 @@ textarea { resize: vertical; }
     state.creators = state.creators.filter((c) => c !== editing); dlg.close(); commit(`${h} supprimé`, () => restore(snap));
   });
   $('#dlg-close').addEventListener('click', () => dlg.close());
+
+  /* ---------- Rédaction par IA (fonction serveur Supabase « generate-message ») ---------- */
+  const AI_LABEL = '✨ Rédiger avec l’IA';
+  function aiNote() {
+    $('#ai-note').textContent = sb && session
+      ? 'L’IA écrit un message sur mesure à partir de la fiche du créateur. Relis-le toujours avant de l’envoyer.'
+      : 'Mode démo : la rédaction par IA sur mesure est disponible dans la version en ligne, une fois connecté.';
+  }
+  $('#ai-btn').addEventListener('click', async () => {
+    if (!sb || !session) { toast('La rédaction par IA est disponible dans la version en ligne, une fois connecté'); return; }
+    const c = current(), btn = $('#ai-btn');
+    btn.disabled = true; btn.textContent = 'Rédaction en cours…';
+    const { data, error } = await sb.functions.invoke('generate-message', {
+      body: {
+        kind: tpl, brand: state.brand, name: state.name, instruction: $('#ai-instr').value.trim(),
+        creator: { handle: c.handle, cat: c.cat, followers: c.followers, commission: c.commission, product: c.product, stage: c.stage, notes: c.notes, sales: total(c), daysSince: daysSince(c.last) },
+      },
+    });
+    btn.disabled = false; btn.textContent = AI_LABEL;
+    if (error || !data?.text) {
+      let msg = 'La rédaction a échoué. Vérifie ta connexion et réessaie.';
+      try { const b = await error.context.json(); if (b.error) msg = b.error; } catch (e) {}
+      toast(msg); return;
+    }
+    $('#msg-out').value = data.text;
+    $('#ai-note').textContent = `Rédigé par l’IA · ${data.remaining} message${data.remaining > 1 ? 's' : ''} IA restant${data.remaining > 1 ? 's' : ''} aujourd’hui. Relis-le avant de l’envoyer.`;
+  });
 
   const TPL_LABEL = { invite: 'Invitation', relance: 'Relance', brief: 'Brief vidéo', merci: 'Remerciement' };
   $('#sent-btn').addEventListener('click', () => {

@@ -13,6 +13,7 @@ MVP d’un CRM pour les vendeurs **TikTok Shop** : suivre ses créateurs affili�
 - **Tableau en colonnes** : Trouvés → Contactés → Échantillon envoyé → Vidéo postée → Génère des ventes. On déplace les cartes par glisser-déposer ou avec le bouton « Suivant ».
 - **Relances automatiques** : un créateur trouvé depuis 5 jours, contacté depuis 3 jours sans suite, ou qui a reçu un échantillon depuis 7 jours sans vidéo apparaît dans « À faire aujourd’hui ».
 - **Messages prêts à copier** : invitation, relance, brief vidéo et remerciement, personnalisés avec le pseudo, le produit, la commission, la marque et le prénom.
+- **Rédaction par IA** (version en ligne) : Claude écrit un message sur mesure à partir de la fiche du créateur, avec une consigne facultative. La clé d’API reste côté serveur (fonction Supabase `generate-message`).
 - **Chiffres clés** : créateurs suivis, échantillons sans vidéo, ventes générées et commissions à verser.
 - **Import et export** : coller une liste depuis Excel ou Google Sheets (ou déposer un CSV), et copier toute la liste pour la recoller dans un tableur.
 - **Filtres** : catégorie, produit, « à relancer seulement ».
@@ -32,7 +33,7 @@ Sans configuration, l’application tourne en mode démo (données dans le navig
 ## Limites connues (volontaires pour un MVP)
 
 - Un espace par compte : pas encore de partage entre plusieurs membres d’une équipe.
-- Les messages viennent de modèles de texte, pas encore d’une IA.
+- La rédaction par IA demande la version en ligne (Supabase) et une clé d’API Anthropic.
 - Pas de connexion à TikTok Shop : les ventes se saisissent à la main.
 
 ## Prochaines étapes
@@ -40,5 +41,5 @@ Sans configuration, l’application tourne en mode démo (données dans le navig
 1. Montrer le MVP à 20 vendeurs ou agences TikTok Shop et noter leurs retours.
 2. Obtenir 5 à 10 préventes (tarif fondateur).
 3. Créer le projet Supabase et activer les comptes (voir SUPABASE.md).
-4. Brancher l’IA (Claude) pour rédiger les messages et suggérer des créateurs.
+4. Déployer la fonction de rédaction par IA (voir SUPABASE.md, section 6).
 5. Étudier l’API Partenaires de TikTok Shop pour importer les ventes automatiquement.

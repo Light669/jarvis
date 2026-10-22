@@ -25,9 +25,13 @@ Aucune installation : ouvrir `index.html` dans un navigateur.
 
 Pour la mettre en ligne gratuitement : activer **GitHub Pages** sur ce dépôt (Settings → Pages → branche `main`, dossier `/`), ou glisser le dossier sur Netlify Drop.
 
+## Comptes et sauvegarde en ligne
+
+Sans configuration, l’application tourne en mode démo (données dans le navigateur). Pour activer la connexion par e-mail et la sauvegarde en ligne avec Supabase, suis [SUPABASE.md](SUPABASE.md).
+
 ## Limites connues (volontaires pour un MVP)
 
-- Les données sont enregistrées **dans le navigateur** (localStorage) : pas de compte, pas de synchronisation entre appareils.
+- Un espace par compte : pas encore de partage entre plusieurs membres d’une équipe.
 - Les messages viennent de modèles de texte, pas encore d’une IA.
 - Pas de connexion à TikTok Shop : les ventes se saisissent à la main.
 
@@ -35,6 +39,6 @@ Pour la mettre en ligne gratuitement : activer **GitHub Pages** sur ce dépôt (
 
 1. Montrer le MVP à 20 vendeurs ou agences TikTok Shop et noter leurs retours.
 2. Obtenir 5 à 10 préventes (tarif fondateur).
-3. Ajouter les comptes utilisateurs et une base de données en ligne.
+3. Créer le projet Supabase et activer les comptes (voir SUPABASE.md).
 4. Brancher l’IA (Claude) pour rédiger les messages et suggérer des créateurs.
 5. Étudier l’API Partenaires de TikTok Shop pour importer les ventes automatiquement.

@@ -227,6 +227,23 @@ textarea { resize: vertical; }
 
 .toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 12px; font-weight: 600; font-size: 14px; z-index: 20; }
 
+/* Connexion et synchronisation */
+.auth { position: fixed; inset: 0; z-index: 30; background: var(--bg); display: grid; place-items: center; padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+.auth-card { width: min(420px, 100%); background: var(--surface); border: 1px solid var(--line); border-radius: 24px; padding: 32px 28px; display: flex; flex-direction: column; gap: 18px; box-shadow: var(--shadow); }
+.auth-card .brand { padding: 0; color: var(--ink); }
+.auth-card h1 { font-size: 26px; }
+.auth-card form { display: flex; flex-direction: column; gap: 12px; }
+.auth-card input { padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); }
+.auth-card .btn-primary { justify-content: center; padding: 12px 16px; }
+.auth-msg { font-size: 14px; color: var(--muted); }
+.auth-msg.err { color: var(--accent); font-weight: 600; }
+.sync { display: flex; align-items: center; gap: 8px; color: #CFC4DC; }
+.sync::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: #8E829D; flex: none; }
+.sync[data-s="ok"]::before { background: #4CD3A6; }
+.sync[data-s="saving"]::before { background: #F5B460; }
+.sync[data-s="error"]::before { background: #FF5C7E; }
+.account { font-size: 12px; color: #ADA2BC; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
 /* Filtres, import, historique */
 .filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .filters select { padding: 9px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); max-width: 220px; }
@@ -282,6 +299,11 @@ textarea { resize: vertical; }
       <label for="s-name">Ton prénom <input id="s-name" placeholder="ex. Camille"></label>
     </div>
     <div class="side-foot">
+      <div id="cloud-box" hidden style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px">
+        <span class="sync" id="sync" data-s="loading">Chargement…</span>
+        <span class="account" id="account"></span>
+        <button type="button" id="logout">Se déconnecter</button>
+      </div>
       <span id="data-note">Données d’exemple, enregistrées dans ce navigateur.</span>
       <button type="button" id="reset-demo">Recharger les exemples</button>
       <button type="button" id="clear-all" class="danger">Tout effacer</button>
@@ -450,6 +472,21 @@ textarea { resize: vertical; }
   </form>
 </dialog>
 
+<div class="auth" id="auth" hidden>
+  <div class="auth-card">
+    <div class="brand">
+      <svg width="34" height="34" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="18" fill="#E8264F"/><path d="M42.6 21.4 A15 15 0 1 0 42.6 42.6" fill="none" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round"/><circle cx="47" cy="32" r="4.5" fill="#FFFFFF"/></svg>
+      <span class="wordmark">Créapilot<span>.</span></span>
+    </div>
+    <h1 id="auth-title">Connexion</h1>
+    <form id="auth-form">
+      <label class="f" for="auth-email">Ton adresse e-mail <input id="auth-email" type="email" autocomplete="email" required placeholder="camille@maison-lune.fr"></label>
+      <button class="btn btn-primary" type="submit" id="auth-go">Recevoir mon lien de connexion</button>
+    </form>
+    <p class="auth-msg" id="auth-msg">Pas de mot de passe : tu reçois un lien par e-mail, tu cliques, et tu es connecté.</p>
+  </div>
+</div>
+
 <dialog id="imp" aria-labelledby="imp-title">
   <form class="dlg" id="imp-form" method="dialog">
     <div class="dlg-head">
@@ -483,6 +520,11 @@ textarea { resize: vertical; }
 
 <script>
 (() => {
+  // Sauvegarde en ligne : renseigne l’URL et la clé « anon public » de ton projet Supabase (voir SUPABASE.md).
+  // Laissés vides, l’application fonctionne en mode démo, avec les données dans le navigateur.
+  const CLOUD = { url: '', anonKey: '' };
+  const SUPABASE_JS = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js';
+
   const STAGES = [
     { id: 'trouve', label: 'Trouvés', c: 'var(--s1)' },
     { id: 'contacte', label: 'Contactés', c: 'var(--s2)' },
@@ -537,7 +579,89 @@ textarea { resize: vertical; }
     } catch (e) { /* stockage indisponible : exemples en mémoire */ }
     state = { creators: demo(), brand: '', name: '', demo: true }; usingDemo = true;
   }
-  function save() { state.demo = usingDemo; try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+  function save() {
+    state.demo = usingDemo;
+    try { localStorage.setItem(session ? `${KEY}:${session.user.id}` : KEY, JSON.stringify(state)); } catch (e) {}
+    queueCloudSave();
+  }
+
+  /* ---------- Comptes et sauvegarde en ligne (Supabase) ---------- */
+  let sb = null, session = null, loaded = false, saveTimer = null, retryTimer = null;
+  const cloudOn = () => !!(CLOUD.url && CLOUD.anonKey);
+  function loadLib() {
+    return new Promise((res, rej) => {
+      if (window.supabase) return res();
+      const s = document.createElement('script');
+      s.src = SUPABASE_JS; s.onload = () => res(); s.onerror = () => rej(new Error('lib'));
+      document.head.appendChild(s);
+    });
+  }
+  function showAuth(mode, msg) {
+    $('#auth').hidden = false;
+    $('#auth-form').hidden = mode === 'loading' || mode === 'sent';
+    $('#auth-title').textContent = mode === 'sent' ? 'Vérifie ta boîte mail' : mode === 'loading' ? 'Chargement…' : 'Connexion';
+    const m = $('#auth-msg');
+    m.classList.toggle('err', mode === 'error');
+    m.textContent = msg || (mode === 'loading' ? 'Un instant…' : 'Pas de mot de passe : tu reçois un lien par e-mail, tu cliques, et tu es connecté.');
+    if (mode === 'error') $('#auth-form').hidden = false;
+  }
+  function setSync(s) {
+    const el = $('#sync'); el.dataset.s = s;
+    el.textContent = { loading: 'Chargement…', saving: 'Enregistrement…', ok: 'Enregistré en ligne', error: 'Pas de connexion : nouvel essai dans 10 s' }[s];
+  }
+  async function bootCloud() {
+    showAuth('loading');
+    try { await loadLib(); } catch (e) { showAuth('error', 'Impossible de joindre le service de connexion. Vérifie ta connexion internet puis recharge la page.'); return; }
+    sb = window.supabase.createClient(CLOUD.url, CLOUD.anonKey);
+    sb.auth.onAuthStateChange((_ev, s) => {
+      if (s && !loaded) { session = s; afterLogin(); }
+      if (!s) { session = null; loaded = false; showAuth('form'); }
+    });
+    const { data } = await sb.auth.getSession();
+    if (data.session && !loaded) { session = data.session; afterLogin(); }
+    else if (!data.session) showAuth('form');
+  }
+  async function afterLogin() {
+    loaded = true;
+    $('#cloud-box').hidden = false; $('#account').textContent = session.user.email || ''; setSync('loading');
+    const { data, error } = await sb.from('app_state').select('data').eq('user_id', session.user.id).maybeSingle();
+    if (error) {
+      // Hors ligne : on reprend la dernière copie gardée sur cet appareil
+      try { const raw = localStorage.getItem(`${KEY}:${session.user.id}`); if (raw) state = JSON.parse(raw); } catch (e) {}
+      setSync('error'); toast('Impossible de charger tes données en ligne pour le moment');
+    } else {
+      state = data && data.data ? data.data : { creators: [], brand: '', name: '', demo: false };
+      setSync('ok');
+    }
+    state.creators = state.creators || [];
+    usingDemo = !!state.demo;
+    $('#auth').hidden = true;
+    applySettings(); render(); go((location.hash || '').slice(1));
+  }
+  function queueCloudSave() {
+    if (!sb || !session || !loaded) return;
+    setSync('saving'); clearTimeout(saveTimer); clearTimeout(retryTimer);
+    saveTimer = setTimeout(pushCloud, 700);
+  }
+  async function pushCloud() {
+    const { error } = await sb.from('app_state').upsert({ user_id: session.user.id, data: state, updated_at: new Date().toISOString() });
+    if (error) { setSync('error'); retryTimer = setTimeout(pushCloud, 10000); } else setSync('ok');
+  }
+  $('#auth-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = $('#auth-email').value.trim(); if (!email || !sb) return;
+    $('#auth-go').disabled = true;
+    const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin + location.pathname } });
+    $('#auth-go').disabled = false;
+    if (error) showAuth('error', `L’envoi du lien a échoué : ${error.message}. Réessaie dans quelques minutes.`);
+    else showAuth('sent', `Un lien de connexion a été envoyé à ${email}. Ouvre-le sur cet appareil pour accéder à ton espace.`);
+  });
+  $('#logout').addEventListener('click', async () => {
+    clearTimeout(saveTimer);
+    if (session) await pushCloud();
+    await sb.auth.signOut();
+    state = { creators: [], brand: '', name: '', demo: false }; render();
+  });
 
   const total = (c) => c.sales.reduce((s, x) => s + (+x.a || 0), 0);
   const comm = (c, amount = total(c)) => amount * (+c.commission || 0) / 100;
@@ -1041,10 +1165,15 @@ textarea { resize: vertical; }
   $('#toast-undo').addEventListener('click', () => { const u = toastUndo; toastUndo = null; $('#toast').hidden = true; if (u) u(); });
   let rz; window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { if (!$('#view-tableau').hidden) weeklyChart(weeks()); }, 120); });
 
-  load();
-  $('#s-brand').value = state.brand || ''; $('#s-name').value = state.name || '';
-  render();
-  go((location.hash || '').slice(1));
+  function applySettings() { $('#s-brand').value = state.brand || ''; $('#s-name').value = state.name || ''; }
+
+  if (cloudOn()) {
+    state = { creators: [], brand: '', name: '', demo: false }; usingDemo = false;
+    render(); bootCloud();
+  } else {
+    load(); applySettings(); render();
+    go((location.hash || '').slice(1));
+  }
 })();
 </script>
 </body>

@@ -1,0 +1,1267 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Créapilot</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..800&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+/* Layout : poste de pilotage. Barre latérale (marque + navigation) | vue Tableau de bord (chiffres → graphiques) ou vue Créateurs (colonnes par étape). */
+:root {
+  --bg: #F6F4F9;
+  --surface: #FFFFFF;
+  --surface-2: #EEEAF4;
+  --ink: #22152F;
+  --muted: #675C76;
+  --line: #E3DDEB;
+  --accent: #E8264F;          /* Grenadine */
+  --accent-ink: #FFFFFF;
+  --accent-soft: #FDE6EC;
+  --aubergine: #22152F;
+  --warn: #9A4508;
+  --warn-bg: #FDEFDF;
+  --good: #0B7A5F;
+  --good-bg: #E0F5EE;
+  /* Étapes : palette validée pour le daltonisme, toujours accompagnée du libellé */
+  --s1: #2A78D6; --s2: #EDA100; --s3: #E8264F; --s4: #6250D6; --s5: #1BAF7A;
+  --grid: #ECE8F1;
+  --shadow: 0 1px 2px rgba(34,21,47,.05), 0 6px 20px rgba(34,21,47,.06);
+  --font-display: "Bricolage Grotesque", "Trebuchet MS", sans-serif;
+  --font-body: "Figtree", "Segoe UI", Arial, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #130E1A; --surface: #1B1424; --surface-2: #251C30; --ink: #F3EEF8; --muted: #ADA2BC; --line: #33283F;
+  --accent: #F23D63; --accent-ink: #1C0710; --accent-soft: #3B1624; --aubergine: #0D0912;
+  --warn: #F5B460; --warn-bg: #36260F; --good: #4CD3A6; --good-bg: #10302A;
+  --s1: #3987E5; --s2: #C98500; --s3: #F23D63; --s4: #9085E9; --s5: #199E70;
+  --grid: #2A2134; --shadow: 0 1px 2px rgba(0,0,0,.35), 0 6px 20px rgba(0,0,0,.3);
+  color-scheme: dark;
+} }
+:root[data-theme="dark"] {
+  --bg: #130E1A; --surface: #1B1424; --surface-2: #251C30; --ink: #F3EEF8; --muted: #ADA2BC; --line: #33283F;
+  --accent: #F23D63; --accent-ink: #1C0710; --accent-soft: #3B1624; --aubergine: #0D0912;
+  --warn: #F5B460; --warn-bg: #36260F; --good: #4CD3A6; --good-bg: #10302A;
+  --s1: #3987E5; --s2: #C98500; --s3: #F23D63; --s4: #9085E9; --s5: #199E70;
+  --grid: #2A2134; --shadow: 0 1px 2px rgba(0,0,0,.35), 0 6px 20px rgba(0,0,0,.3);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { min-height: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font: 15px/1.5 var(--font-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 16px 32px;
+}
+h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; letter-spacing: -0.015em; }
+p { margin: 0; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.num { font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); }
+
+.app { max-width: 1480px; margin: 0 auto; display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 24px; align-items: start; }
+
+/* Barre latérale */
+.side { position: sticky; top: calc(16px + env(safe-area-inset-top, 0px)); background: var(--aubergine); color: #F3EEF8; border-radius: 22px; padding: 22px 16px; display: flex; flex-direction: column; gap: 26px; min-height: calc(100vh - 48px); }
+.brand { display: flex; align-items: center; gap: 10px; padding: 0 6px; }
+.brand svg { flex: none; }
+.wordmark { font: 800 23px/1 var(--font-display); letter-spacing: -0.03em; }
+.wordmark span { color: #FF5C7E; }
+.nav { display: flex; flex-direction: column; gap: 4px; }
+.nav button { display: flex; align-items: center; gap: 12px; border: none; background: transparent; color: #CFC4DC; padding: 11px 12px; border-radius: 12px; font-weight: 600; text-align: left; }
+.nav button:hover { background: rgba(255,255,255,.06); color: #FFFFFF; }
+.nav button[aria-current="page"] { background: rgba(255,255,255,.1); color: #FFFFFF; }
+.nav button[aria-current="page"] svg { color: #FF5C7E; }
+.nav .badge { margin-left: auto; background: #FF5C7E; color: #22152F; font-size: 12px; font-weight: 700; border-radius: 999px; padding: 1px 8px; }
+.side-card { background: rgba(255,255,255,.06); border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.side-card p { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #ADA2BC; }
+.side-card label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: #CFC4DC; }
+.side-card input { background: rgba(0,0,0,.25); border: 1px solid rgba(255,255,255,.12); border-radius: 10px; padding: 8px 10px; color: #FFFFFF; }
+.side-card input::placeholder { color: #8E829D; }
+.side-foot { margin-top: auto; display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #ADA2BC; }
+.side-foot button { border: none; background: none; color: #CFC4DC; text-align: left; padding: 4px 0; font-size: 13px; text-decoration: underline; text-underline-offset: 3px; }
+.side-foot button.danger { color: #FF8FA6; }
+
+/* Contenu */
+main { min-width: 0; display: flex; flex-direction: column; gap: 20px; }
+.view { display: flex; flex-direction: column; gap: 20px; }
+.page-head { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px 20px; padding-top: 6px; }
+.eyebrow { font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.page-head h1 { font-size: clamp(28px, 3.4vw, 40px); line-height: 1.1; }
+.page-head h1 em { font-style: normal; color: var(--accent); }
+.head-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.btn { border: 1px solid var(--line); background: var(--surface); padding: 10px 16px; border-radius: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; }
+.btn:hover { border-color: var(--muted); }
+.btn-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); box-shadow: 0 6px 18px color-mix(in srgb, var(--accent) 30%, transparent); }
+.btn-primary:hover { filter: brightness(1.06); border-color: var(--accent); }
+.btn-sm { padding: 6px 10px; font-size: 13px; border-radius: 9px; }
+.btn-ghost { background: transparent; border-color: transparent; color: var(--muted); }
+.btn-danger { color: var(--accent); }
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.panel-head { display: flex; align-items: start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.panel-head h2 { font-size: 19px; }
+.panel-head p { font-size: 13px; color: var(--muted); }
+
+/* Indicateurs */
+.kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.kpi { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 18px 20px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.kpi-label { font-size: 13px; font-weight: 600; color: var(--muted); }
+.kpi-value { font: 700 34px/1.1 var(--font-display); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.kpi-sub { font-size: 13px; color: var(--muted); display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.delta { font-weight: 700; border-radius: 999px; padding: 1px 8px; font-size: 12px; background: var(--surface-2); }
+.delta.up { background: var(--good-bg); color: var(--good); }
+.delta.down { background: var(--accent-soft); color: var(--accent); }
+.spark { height: 40px; width: 100%; display: block; }
+.kpi.feature { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.kpi.feature .kpi-label, .kpi.feature .kpi-sub { color: var(--accent-ink); opacity: .88; }
+.kpi.feature .delta { background: var(--accent-ink); color: var(--accent); }
+
+.row { display: grid; gap: 16px; }
+.row-a { grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr); }
+.row-b { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+
+/* Graphique hebdomadaire */
+.chart-box { position: relative; }
+.chart-box svg { display: block; width: 100%; height: 260px; overflow: visible; }
+.chart-box text { font-family: var(--font-body); font-size: 12px; fill: var(--muted); font-variant-numeric: tabular-nums; }
+.chart-box text.value { fill: var(--ink); font-weight: 700; font-size: 13px; }
+.tip { position: absolute; pointer-events: none; background: var(--ink); color: var(--bg); padding: 8px 10px; border-radius: 10px; font-size: 13px; line-height: 1.35; white-space: nowrap; transform: translate(-50%, calc(-100% - 10px)); box-shadow: var(--shadow); }
+.tip b { font-size: 15px; }
+.seg { display: inline-flex; background: var(--surface-2); border-radius: 10px; padding: 3px; }
+.seg button { border: none; background: transparent; padding: 5px 10px; border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: var(--shadow); }
+.table-wrap { overflow-x: auto; }
+table.data { width: 100%; border-collapse: collapse; font-size: 14px; }
+table.data th, table.data td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: left; }
+table.data td.r, table.data th.r { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* À faire */
+.todo { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.todo li { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 14px; background: var(--surface-2); }
+.todo .info { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.todo .info b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.todo .info small { color: var(--muted); }
+.todo li.todo-empty { padding: 26px 12px; justify-content: center; text-align: center; color: var(--good); background: var(--good-bg); font-weight: 600; }
+.pill { white-space: nowrap; font-size: 12px; font-weight: 700; padding: 3px 9px; border-radius: 999px; background: var(--warn-bg); color: var(--warn); display: inline-flex; align-items: center; gap: 5px; }
+.pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+/* Parcours et classement */
+.funnel { display: flex; flex-direction: column; gap: 12px; }
+.f-row { display: grid; grid-template-columns: 150px minmax(0, 1fr) 44px; align-items: center; gap: 12px; }
+.f-label { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.f-track { background: var(--surface-2); border-radius: 0 6px 6px 0; height: 28px; }
+.f-bar { display: block; height: 100%; border-radius: 0 4px 4px 0; min-width: 4px; transition: width .5s ease; }
+.f-count { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+.f-conv { grid-column: 2 / 4; font-size: 12px; color: var(--muted); margin-top: -8px; }
+.dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+.rank { display: flex; flex-direction: column; gap: 12px; }
+.r-row { display: grid; grid-template-columns: 22px 36px minmax(0, 1fr) auto; align-items: center; gap: 10px; border: none; background: none; padding: 0; text-align: left; width: 100%; }
+.r-pos { font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; }
+.r-mid { min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+.r-mid b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+.r-track { display: block; height: 8px; background: var(--surface-2); border-radius: 0 4px 4px 0; }
+.r-bar { display: block; height: 100%; background: var(--s5); border-radius: 0 4px 4px 0; transition: width .5s ease; }
+.r-val { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; font-size: 14px; }
+.r-val small { display: block; font-weight: 500; color: var(--muted); font-size: 12px; }
+.avatar { width: 36px; height: 36px; border-radius: 12px; display: grid; place-items: center; font-weight: 700; font-size: 14px; color: #FFFFFF; flex: none; }
+
+/* Vue Créateurs */
+.toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+.toolbar input { padding: 10px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); width: min(340px, 100%); }
+.hint { color: var(--muted); font-size: 13px; }
+.board-scroll { overflow-x: auto; padding-bottom: 8px; }
+.board { display: grid; grid-template-columns: repeat(5, minmax(236px, 1fr)); gap: 14px; min-width: 1240px; }
+.col { background: var(--surface-2); border-radius: 18px; padding: 12px; display: flex; flex-direction: column; gap: 10px; min-height: 360px; outline: 2px dashed transparent; outline-offset: -2px; transition: outline-color .15s; }
+.col.drop { outline-color: var(--accent); }
+.col-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 2px 4px 8px; border-bottom: 3px solid var(--c); }
+.col-head h3 { font-size: 15px; display: flex; align-items: center; gap: 8px; }
+.count { font-size: 13px; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; }
+.col-empty { color: var(--muted); font-size: 13px; text-align: center; padding: 22px 8px; border: 1px dashed var(--line); border-radius: 12px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px; display: flex; flex-direction: column; gap: 8px; box-shadow: var(--shadow); cursor: grab; }
+.card:hover { border-color: var(--muted); }
+.card.dragging { opacity: .45; }
+.card-top { display: flex; align-items: center; gap: 10px; }
+.card-id { min-width: 0; flex: 1; }
+.card-id b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.card-id small { color: var(--muted); }
+.money { font-size: 14px; display: flex; justify-content: space-between; gap: 8px; }
+.money b { color: var(--good); }
+.card-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; color: var(--muted); }
+.next { white-space: nowrap; border: 1px solid var(--line); background: transparent; border-radius: 8px; padding: 3px 8px; font-size: 12px; font-weight: 600; color: var(--muted); }
+.next:hover { color: var(--ink); border-color: var(--muted); }
+
+/* Fenêtre */
+dialog { border: none; border-radius: 22px; padding: 0; width: min(660px, calc(100vw - 32px)); background: var(--surface); color: var(--ink); box-shadow: 0 24px 70px rgba(0,0,0,.35); }
+dialog::backdrop { background: rgba(19,14,26,.55); }
+.dlg { display: flex; flex-direction: column; max-height: min(88vh, 880px); }
+.dlg-head { display: flex; align-items: center; gap: 12px; padding: 20px 22px 0; }
+.dlg-head h2 { font-size: 22px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.tabs { display: flex; gap: 4px; padding: 12px 22px 0; border-bottom: 1px solid var(--line); }
+.tab { border: none; background: none; padding: 9px 12px; font-weight: 600; color: var(--muted); border-bottom: 2px solid transparent; }
+.tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+.dlg-body { padding: 18px 22px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+label.f { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 600; color: var(--muted); min-width: 0; }
+label.f input, label.f select, label.f textarea { padding: 9px 11px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); font-weight: 400; color: var(--ink); width: 100%; }
+textarea { resize: vertical; }
+.calc { background: var(--surface-2); border-radius: 12px; padding: 10px 12px; font-size: 14px; }
+.sale-add { display: flex; gap: 8px; flex-wrap: wrap; align-items: end; }
+.sale-add label.f { flex: 1; min-width: 130px; }
+.sales-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.sales-list li { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 2px; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+.sales-list li span { flex: 1; }
+.sales-list button { border: none; background: none; color: var(--muted); font-size: 18px; line-height: 1; padding: 2px 6px; border-radius: 6px; }
+.sales-list button:hover { color: var(--accent); background: var(--accent-soft); }
+.tpl-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.tpl-row .btn[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+#msg-out { min-height: 230px; line-height: 1.55; }
+.dlg-foot { display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; padding: 14px 22px 20px; border-top: 1px solid var(--line); }
+.dlg-foot div { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 12px; font-weight: 600; font-size: 14px; z-index: 20; }
+
+/* Connexion et synchronisation */
+.auth { position: fixed; inset: 0; z-index: 30; background: var(--bg); display: grid; place-items: center; padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+.auth-card { width: min(420px, 100%); background: var(--surface); border: 1px solid var(--line); border-radius: 24px; padding: 32px 28px; display: flex; flex-direction: column; gap: 18px; box-shadow: var(--shadow); }
+.auth-card .brand { padding: 0; color: var(--ink); }
+.auth-card h1 { font-size: 26px; }
+.auth-card form { display: flex; flex-direction: column; gap: 12px; }
+.auth-card input { padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); }
+.auth-card .btn-primary { justify-content: center; padding: 12px 16px; }
+.auth-msg { font-size: 14px; color: var(--muted); }
+.auth-msg.err { color: var(--accent); font-weight: 600; }
+.sync { display: flex; align-items: center; gap: 8px; color: #CFC4DC; }
+.sync::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: #8E829D; flex: none; }
+.sync[data-s="ok"]::before { background: #4CD3A6; }
+.sync[data-s="saving"]::before { background: #F5B460; }
+.sync[data-s="error"]::before { background: #FF5C7E; }
+.account { font-size: 12px; color: #ADA2BC; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.ai-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.ai-row input { flex: 1; min-width: 200px; padding: 9px 11px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); }
+.btn-ai { background: var(--accent-soft); border-color: var(--accent); color: var(--ink); }
+.btn-ai:disabled { opacity: .7; cursor: progress; }
+
+/* Filtres, import, historique */
+.filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.filters select { padding: 9px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); max-width: 220px; }
+.chk { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); font-size: 14px; font-weight: 600; cursor: pointer; }
+.chk input { accent-color: var(--accent); width: 16px; height: 16px; }
+.log-wrap { display: flex; flex-direction: column; gap: 8px; }
+.log { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+.log li { display: flex; gap: 10px; align-items: baseline; }
+.log time { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; flex: none; width: 92px; }
+.msg-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
+.drop-zone { border: 2px dashed var(--line); border-radius: 14px; padding: 14px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; font-size: 14px; color: var(--muted); }
+.drop-zone.over { border-color: var(--accent); background: var(--accent-soft); }
+#imp-text { min-height: 150px; font: 13px/1.5 ui-monospace, "SF Mono", Menlo, monospace; }
+.imp-preview { background: var(--surface-2); border-radius: 12px; padding: 12px; font-size: 14px; display: flex; flex-direction: column; gap: 6px; }
+.imp-preview table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.imp-preview th, .imp-preview td { text-align: left; padding: 4px 6px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.toast { display: flex; align-items: center; gap: 14px; }
+.toast button { border: none; background: none; color: var(--bg); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; padding: 0; }
+
+@media (max-width: 1180px) { .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } .row-a, .row-b { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 860px) {
+  .app { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .side { position: static; min-height: 0; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 12px; padding: 12px; border-radius: 18px; }
+  .nav { flex-direction: row; flex: 1; justify-content: flex-end; }
+  .nav button { padding: 9px 10px; }
+  .side-card, .side-foot { display: none; }
+}
+@media (max-width: 520px) { .kpis { grid-template-columns: minmax(0, 1fr); } .grid2 { grid-template-columns: 1fr; } .f-row { grid-template-columns: 112px minmax(0, 1fr) 36px; } .nav .label { display: none; } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand">
+      <svg width="34" height="34" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="18" fill="#E8264F"/><path d="M42.6 21.4 A15 15 0 1 0 42.6 42.6" fill="none" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round"/><circle cx="47" cy="32" r="4.5" fill="#FFFFFF"/></svg>
+      <span class="wordmark">Créapilot<span>.</span></span>
+    </div>
+    <nav class="nav" aria-label="Navigation">
+      <button type="button" data-view="tableau" aria-current="page">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
+        <span class="label">Tableau de bord</span>
+      </button>
+      <button type="button" data-view="createurs">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="4" width="5" height="16" rx="1.5"/><rect x="10" y="4" width="5" height="10" rx="1.5"/><rect x="17" y="4" width="5" height="13" rx="1.5"/></svg>
+        <span class="label">Créateurs</span>
+        <span class="badge num" id="nav-badge" hidden>0</span>
+      </button>
+      <button type="button" data-view="inscrits" id="nav-leads" hidden>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 4h16v16H4z"/><path d="m4 6 8 7 8-7"/></svg>
+        <span class="label">Inscrits</span>
+      </button>
+    </nav>
+    <div class="side-card">
+      <p>Tes infos</p>
+      <label for="s-brand">Ta marque <input id="s-brand" placeholder="ex. Maison Lune"></label>
+      <label for="s-name">Ton prénom <input id="s-name" placeholder="ex. Camille"></label>
+    </div>
+    <div class="side-foot">
+      <div id="cloud-box" hidden style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px">
+        <span class="sync" id="sync" data-s="loading">Chargement…</span>
+        <span class="account" id="account"></span>
+        <button type="button" id="logout">Se déconnecter</button>
+      </div>
+      <span id="data-note">Données d’exemple, enregistrées dans ce navigateur.</span>
+      <button type="button" id="reset-demo">Recharger les exemples</button>
+      <button type="button" id="clear-all" class="danger">Tout effacer</button>
+    </div>
+  </aside>
+
+  <main>
+    <section class="view" id="view-tableau" aria-label="Tableau de bord">
+      <header class="page-head">
+        <div>
+          <p class="eyebrow" id="today-label"></p>
+          <h1 id="hello">Bonjour, voici tes créateurs</h1>
+        </div>
+        <div class="head-actions">
+          <button class="btn btn-primary" type="button" data-add>+ Ajouter un créateur</button>
+        </div>
+      </header>
+
+      <div class="kpis">
+        <article class="kpi feature">
+          <span class="kpi-label">Ventes générées · 30 jours</span>
+          <span class="kpi-value" id="k-sales">0 €</span>
+          <span class="kpi-sub" id="k-sales-sub"></span>
+          <svg class="spark" id="spark-sales" preserveAspectRatio="none" aria-hidden="true"></svg>
+        </article>
+        <article class="kpi">
+          <span class="kpi-label">Commissions à verser · 30 jours</span>
+          <span class="kpi-value" id="k-comm">0 €</span>
+          <span class="kpi-sub" id="k-comm-sub"></span>
+          <svg class="spark" id="spark-comm" preserveAspectRatio="none" aria-hidden="true"></svg>
+        </article>
+        <article class="kpi">
+          <span class="kpi-label">Créateurs qui ont posté</span>
+          <span class="kpi-value" id="k-active">0</span>
+          <span class="kpi-sub" id="k-active-sub"></span>
+        </article>
+        <article class="kpi">
+          <span class="kpi-label">Retour sur échantillons</span>
+          <span class="kpi-value" id="k-roi">—</span>
+          <span class="kpi-sub" id="k-roi-sub"></span>
+        </article>
+      </div>
+
+      <div class="row row-a">
+        <article class="panel">
+          <div class="panel-head">
+            <div><h2>Ventes générées par semaine</h2><p>Tous créateurs confondus, sur les 8 dernières semaines</p></div>
+            <div class="seg" role="group" aria-label="Affichage">
+              <button type="button" id="show-chart" aria-pressed="true">Graphique</button>
+              <button type="button" id="show-table" aria-pressed="false">Chiffres</button>
+            </div>
+          </div>
+          <div class="chart-box" id="weekly"></div>
+          <div class="table-wrap" id="weekly-table" hidden></div>
+        </article>
+        <article class="panel">
+          <div class="panel-head">
+            <div><h2>À faire aujourd’hui</h2><p>Les créateurs qui attendent une action de ta part</p></div>
+          </div>
+          <ul class="todo" id="todo"></ul>
+        </article>
+      </div>
+
+      <div class="row row-b">
+        <article class="panel">
+          <div class="panel-head">
+            <div><h2>Parcours des créateurs</h2><p>Combien atteignent chaque étape, et combien passent à la suivante</p></div>
+          </div>
+          <div class="funnel" id="funnel"></div>
+        </article>
+        <article class="panel">
+          <div class="panel-head">
+            <div><h2>Meilleurs créateurs</h2><p>Ventes générées depuis le début de la collaboration</p></div>
+          </div>
+          <div class="rank" id="rank"></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="view" id="view-createurs" aria-label="Créateurs" hidden>
+      <header class="page-head">
+        <div>
+          <p class="eyebrow">Suivi des collaborations</p>
+          <h1>Créateurs</h1>
+        </div>
+        <div class="head-actions">
+          <button class="btn" type="button" id="imp-open">Importer</button>
+          <button class="btn" type="button" id="export-btn">Copier pour Excel</button>
+          <button class="btn btn-primary" type="button" data-add>+ Ajouter un créateur</button>
+        </div>
+      </header>
+      <div class="toolbar">
+        <div class="filters">
+          <input id="search" type="search" placeholder="Rechercher un créateur, un produit…" aria-label="Rechercher">
+          <select id="flt-cat" aria-label="Filtrer par catégorie"></select>
+          <select id="flt-prod" aria-label="Filtrer par produit"></select>
+          <label class="chk" for="flt-alert"><input type="checkbox" id="flt-alert"> À relancer seulement</label>
+        </div>
+        <span class="hint">Glisse une carte vers une autre colonne, ou clique sur « Suivant ».</span>
+      </div>
+      <div class="board-scroll"><div class="board" id="board"></div></div>
+    </section>
+
+    <section class="view" id="view-inscrits" aria-label="Inscrits" hidden>
+      <header class="page-head">
+        <div>
+          <p class="eyebrow">Page de vente</p>
+          <h1>Inscrits au programme fondateur</h1>
+        </div>
+        <div class="head-actions">
+          <button class="btn" type="button" id="leads-refresh">Actualiser</button>
+          <button class="btn" type="button" id="leads-copy">Copier pour Excel</button>
+        </div>
+      </header>
+      <article class="panel">
+        <div class="table-wrap" id="leads"></div>
+      </article>
+    </section>
+  </main>
+</div>
+
+<dialog id="dlg" aria-labelledby="dlg-title">
+  <form class="dlg" id="form" method="dialog">
+    <div class="dlg-head">
+      <span class="avatar" id="dlg-avatar" aria-hidden="true">+</span>
+      <h2 id="dlg-title">Nouveau créateur</h2>
+      <a class="btn btn-ghost btn-sm" id="dlg-tiktok" target="_blank" rel="noopener" hidden>Profil TikTok ↗</a>
+      <button class="btn btn-ghost" type="button" id="dlg-close" aria-label="Fermer">✕</button>
+    </div>
+    <div class="tabs" role="tablist">
+      <button class="tab" type="button" role="tab" data-tab="info" aria-selected="true">Fiche</button>
+      <button class="tab" type="button" role="tab" data-tab="sales" aria-selected="false">Ventes</button>
+      <button class="tab" type="button" role="tab" data-tab="msg" aria-selected="false">Messages</button>
+    </div>
+    <div class="dlg-body" data-pane="info">
+      <div class="grid2">
+        <label class="f" for="f-handle">Pseudo TikTok <input id="f-handle" placeholder="@pseudo"></label>
+        <label class="f" for="f-cat">Catégorie <select id="f-cat"></select></label>
+        <label class="f" for="f-followers">Abonnés <input id="f-followers" type="number" min="0" step="100" placeholder="12000"></label>
+        <label class="f" for="f-commission">Commission (%) <input id="f-commission" type="number" min="0" max="80" step="1" value="15"></label>
+        <label class="f" for="f-product">Produit proposé <input id="f-product" placeholder="Sérum vitamine C"></label>
+        <label class="f" for="f-cost">Coût de l’échantillon (€) <input id="f-cost" type="number" min="0" step="1" value="15"></label>
+        <label class="f" for="f-stage">Étape <select id="f-stage"></select></label>
+        <label class="f" for="f-last">Dernière action <input id="f-last" type="date"></label>
+      </div>
+      <label class="f" for="f-notes">Notes <textarea id="f-notes" rows="3" placeholder="Adresse d’envoi, date de publication prévue, préférences…"></textarea></label>
+      <div class="log-wrap" id="log-wrap">
+        <p class="eyebrow">Historique</p>
+        <ul class="log" id="log"></ul>
+      </div>
+    </div>
+    <div class="dlg-body" data-pane="sales" hidden>
+      <div class="calc num" id="sales-calc"></div>
+      <div class="sale-add">
+        <label class="f" for="sale-date">Date <input id="sale-date" type="date"></label>
+        <label class="f" for="sale-amount">Montant des ventes (€) <input id="sale-amount" type="number" min="0" step="1" placeholder="120"></label>
+        <button class="btn" type="button" id="sale-add">Ajouter la vente</button>
+      </div>
+      <ul class="sales-list" id="sales-list"></ul>
+    </div>
+    <div class="dlg-body" data-pane="msg" hidden>
+      <div class="tpl-row" role="group" aria-label="Type de message">
+        <button class="btn btn-sm" type="button" data-tpl="invite" aria-pressed="true">Invitation</button>
+        <button class="btn btn-sm" type="button" data-tpl="relance" aria-pressed="false">Relance</button>
+        <button class="btn btn-sm" type="button" data-tpl="brief" aria-pressed="false">Brief vidéo</button>
+        <button class="btn btn-sm" type="button" data-tpl="merci" aria-pressed="false">Remerciement</button>
+      </div>
+      <div class="ai-row">
+        <input id="ai-instr" placeholder="Consigne pour l’IA (facultatif) : plus court, ton plus pro, parle du code promo…" aria-label="Consigne pour l’IA">
+        <button class="btn btn-ai" type="button" id="ai-btn">✨ Rédiger avec l’IA</button>
+      </div>
+      <p class="hint" id="ai-note"></p>
+      <label class="f" for="msg-out">Message prêt à envoyer (tu peux le modifier) <textarea id="msg-out"></textarea></label>
+      <div class="msg-actions">
+        <span class="hint">Copie le message, colle-le dans TikTok, puis indique-le ici.</span>
+        <button class="btn" type="button" id="sent-btn">J’ai envoyé ce message</button>
+      </div>
+    </div>
+    <div class="dlg-foot">
+      <div><button class="btn btn-ghost btn-danger" type="button" id="del-btn">Supprimer</button></div>
+      <div>
+        <button class="btn" type="button" id="copy-btn" hidden>Copier le message</button>
+        <button class="btn" type="button" id="done-btn">Action faite aujourd’hui</button>
+        <button class="btn btn-primary" type="submit">Enregistrer</button>
+      </div>
+    </div>
+  </form>
+</dialog>
+
+<div class="auth" id="auth" hidden>
+  <div class="auth-card">
+    <div class="brand">
+      <svg width="34" height="34" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="18" fill="#E8264F"/><path d="M42.6 21.4 A15 15 0 1 0 42.6 42.6" fill="none" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round"/><circle cx="47" cy="32" r="4.5" fill="#FFFFFF"/></svg>
+      <span class="wordmark">Créapilot<span>.</span></span>
+    </div>
+    <h1 id="auth-title">Connexion</h1>
+    <form id="auth-form">
+      <label class="f" for="auth-email">Ton adresse e-mail <input id="auth-email" type="email" autocomplete="email" required placeholder="camille@maison-lune.fr"></label>
+      <button class="btn btn-primary" type="submit" id="auth-go">Recevoir mon lien de connexion</button>
+    </form>
+    <p class="auth-msg" id="auth-msg">Pas de mot de passe : tu reçois un lien par e-mail, tu cliques, et tu es connecté.</p>
+  </div>
+</div>
+
+<dialog id="imp" aria-labelledby="imp-title">
+  <form class="dlg" id="imp-form" method="dialog">
+    <div class="dlg-head">
+      <h2 id="imp-title">Importer des créateurs</h2>
+      <button class="btn btn-ghost" type="button" id="imp-close" aria-label="Fermer">✕</button>
+    </div>
+    <div class="dlg-body">
+      <p class="hint">Copie les lignes de ton fichier Excel ou Google Sheets (avec la ligne de titres si tu en as une) et colle-les ci-dessous. Colonnes reconnues : pseudo, abonnés, catégorie, produit, commission, étape, notes.</p>
+      <div class="drop-zone" id="imp-drop">
+        <span>Ou dépose un fichier CSV ici</span>
+        <label class="btn btn-sm" for="imp-file">Choisir un fichier</label>
+        <input id="imp-file" type="file" accept=".csv,.txt,.tsv,text/csv,text/plain" hidden>
+      </div>
+      <label class="f" for="imp-text">Lignes à importer <textarea id="imp-text" placeholder="Pseudo	Abonnés	Catégorie	Produit	Commission
+@lea.glow	48200	Beauté	Sérum vitamine C	15
+@max.fit	31k	Sport	Gourde isotherme	12"></textarea></label>
+      <div class="imp-preview" id="imp-preview" hidden></div>
+      <label class="chk" for="imp-replace" id="imp-replace-wrap"><input type="checkbox" id="imp-replace" checked> Remplacer les créateurs d’exemple</label>
+    </div>
+    <div class="dlg-foot">
+      <div></div>
+      <div>
+        <button class="btn" type="button" id="imp-cancel">Annuler</button>
+        <button class="btn btn-primary" type="submit" id="imp-go" disabled>Importer</button>
+      </div>
+    </div>
+  </form>
+</dialog>
+
+<script src="config.js"></script>
+
+<div class="toast" id="toast" role="status" hidden><span id="toast-msg"></span><button type="button" id="toast-undo" hidden>Annuler</button></div>
+
+<script>
+(() => {
+  // Sauvegarde en ligne : l’URL et la clé « anon public » Supabase se renseignent dans config.js (voir SUPABASE.md).
+  // Laissées vides, l’application fonctionne en mode démo, avec les données dans le navigateur.
+  const CFG = window.CREAPILOT_CONFIG || {};
+  const CLOUD = { url: CFG.supabaseUrl || '', anonKey: CFG.supabaseAnonKey || '' };
+  const SUPABASE_JS = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js';
+
+  const STAGES = [
+    { id: 'trouve', label: 'Trouvés', c: 'var(--s1)' },
+    { id: 'contacte', label: 'Contactés', c: 'var(--s2)' },
+    { id: 'echantillon', label: 'Échantillon envoyé', c: 'var(--s3)' },
+    { id: 'video', label: 'Vidéo postée', c: 'var(--s4)' },
+    { id: 'vend', label: 'Génère des ventes', c: 'var(--s5)' },
+  ];
+  const SI = Object.fromEntries(STAGES.map((s, i) => [s.id, i]));
+  const CATS = ['Beauté', 'Mode', 'Cuisine', 'Maison', 'Tech', 'Sport', 'Bébé', 'Animaux', 'Autre'];
+  // Délais (en jours) au-delà desquels un créateur attend une action
+  const RULES = { trouve: [5, 'À contacter'], contacte: [3, 'À relancer'], echantillon: [7, 'Vidéo en retard'] };
+  const KEY = 'creapilot-v2';
+  const AV = ['#E8264F', '#6250D6', '#0B7A5F', '#B86A00', '#2A78D6', '#9B3FB8'];
+
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const iso = (d) => { const x = new Date(d); x.setMinutes(x.getMinutes() - x.getTimezoneOffset()); return x.toISOString().slice(0, 10); };
+  const today = () => iso(new Date());
+  const daysAgo = (n) => { const d = new Date(); d.setDate(d.getDate() - n); return iso(d); };
+  const dayDiff = (a, b) => Math.round((new Date(b) - new Date(a)) / 864e5);
+  const daysSince = (d) => Math.max(0, dayDiff(d, today()));
+  const eur = (n) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n || 0);
+  const nf = (n, d = 1) => new Intl.NumberFormat('fr-FR', { maximumFractionDigits: d }).format(n);
+  const kFmt = (n) => !n ? '—' : n >= 1e6 ? nf(n / 1e6) + ' M' : n >= 1e3 ? nf(n / 1e3) + ' k' : String(n);
+  const dShort = (d) => new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short' }).format(new Date(d));
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const uid = () => Math.random().toString(36).slice(2, 10);
+  const at = (h) => { h = String(h || '').trim().replace(/\s+/g, ''); return h ? (h.startsWith('@') ? h : '@' + h) : ''; };
+
+  /* ---------- Données ---------- */
+  function demo() {
+    const s = (pairs) => pairs.map(([n, a]) => ({ id: uid(), d: daysAgo(n), a }));
+    return [
+      { handle: '@lea.glow', cat: 'Beauté', followers: 48200, commission: 15, product: 'Sérum vitamine C', cost: 14, stage: 'trouve', last: daysAgo(6), notes: 'Routines du matin, très bon taux d’engagement.', sales: [] },
+      { handle: '@nico.unbox', cat: 'Tech', followers: 12800, commission: 12, product: 'Lampe LED de bureau', cost: 22, stage: 'trouve', last: daysAgo(1), notes: '', sales: [] },
+      { handle: '@ines.makeup', cat: 'Beauté', followers: 96500, commission: 18, product: 'Sérum vitamine C', cost: 14, stage: 'contacte', last: daysAgo(4), notes: 'DM envoyé, pas encore de réponse.', sales: [] },
+      { handle: '@max.fitlife', cat: 'Sport', followers: 31000, commission: 15, product: 'Gourde isotherme', cost: 11, stage: 'contacte', last: daysAgo(1), notes: 'Intéressé, attend l’adresse d’envoi.', sales: [] },
+      { handle: '@sarah.cuisine', cat: 'Cuisine', followers: 22400, commission: 15, product: 'Set de couteaux', cost: 28, stage: 'echantillon', last: daysAgo(9), notes: 'Colis livré. Vidéo promise pour le week-end.', sales: [] },
+      { handle: '@tom.maison', cat: 'Maison', followers: 15700, commission: 12, product: 'Diffuseur d’huiles', cost: 18, stage: 'echantillon', last: daysAgo(2), notes: '', sales: [] },
+      { handle: '@julie.style', cat: 'Mode', followers: 67300, commission: 20, product: 'Sac bandoulière', cost: 24, stage: 'video', last: daysAgo(2), notes: 'Vidéo en ligne, bons commentaires.', sales: s([[6, 95], [2, 85]]) },
+      { handle: '@chloe.home', cat: 'Maison', followers: 39800, commission: 12, product: 'Diffuseur d’huiles', cost: 18, stage: 'vend', last: daysAgo(4), notes: '', sales: s([[33, 120], [26, 160], [19, 140], [11, 110], [4, 110]]) },
+      { handle: '@emma.skin', cat: 'Beauté', followers: 128000, commission: 18, product: 'Sérum vitamine C', cost: 14, stage: 'vend', last: daysAgo(3), notes: 'Top créatrice. Proposer une 2ᵉ vidéo.', sales: s([[40, 90], [31, 150], [24, 210], [17, 260], [10, 240], [3, 290]]) },
+      { handle: '@leo.gadget', cat: 'Tech', followers: 54100, commission: 12, product: 'Lampe LED de bureau', cost: 22, stage: 'vend', last: daysAgo(5), notes: '', sales: s([[47, 70], [36, 130], [22, 180], [13, 220], [5, 260]]) },
+    ].map((c) => ({ id: uid(), ...c }));
+  }
+
+  let state, usingDemo;
+  function load() {
+    try {
+      const raw = localStorage.getItem(KEY);
+      if (raw) { state = JSON.parse(raw); usingDemo = !!state.demo; return; }
+    } catch (e) { /* stockage indisponible : exemples en mémoire */ }
+    state = { creators: demo(), brand: '', name: '', demo: true }; usingDemo = true;
+  }
+  function save() {
+    state.demo = usingDemo;
+    try { localStorage.setItem(session ? `${KEY}:${session.user.id}` : KEY, JSON.stringify(state)); } catch (e) {}
+    queueCloudSave();
+  }
+
+  /* ---------- Comptes et sauvegarde en ligne (Supabase) ---------- */
+  let sb = null, session = null, loaded = false, saveTimer = null, retryTimer = null;
+  const cloudOn = () => !!(CLOUD.url && CLOUD.anonKey);
+  function loadLib() {
+    return new Promise((res, rej) => {
+      if (window.supabase) return res();
+      const s = document.createElement('script');
+      s.src = SUPABASE_JS; s.onload = () => res(); s.onerror = () => rej(new Error('lib'));
+      document.head.appendChild(s);
+    });
+  }
+  function showAuth(mode, msg) {
+    $('#auth').hidden = false;
+    $('#auth-form').hidden = mode === 'loading' || mode === 'sent';
+    $('#auth-title').textContent = mode === 'sent' ? 'Vérifie ta boîte mail' : mode === 'loading' ? 'Chargement…' : 'Connexion';
+    const m = $('#auth-msg');
+    m.classList.toggle('err', mode === 'error');
+    m.textContent = msg || (mode === 'loading' ? 'Un instant…' : 'Pas de mot de passe : tu reçois un lien par e-mail, tu cliques, et tu es connecté.');
+    if (mode === 'error') $('#auth-form').hidden = false;
+  }
+  function setSync(s) {
+    const el = $('#sync'); el.dataset.s = s;
+    el.textContent = { loading: 'Chargement…', saving: 'Enregistrement…', ok: 'Enregistré en ligne', error: 'Pas de connexion : nouvel essai dans 10 s' }[s];
+  }
+  async function bootCloud() {
+    showAuth('loading');
+    try { await loadLib(); } catch (e) { showAuth('error', 'Impossible de joindre le service de connexion. Vérifie ta connexion internet puis recharge la page.'); return; }
+    sb = window.supabase.createClient(CLOUD.url, CLOUD.anonKey);
+    sb.auth.onAuthStateChange((_ev, s) => {
+      if (s && !loaded) { session = s; afterLogin(); }
+      if (!s) { session = null; loaded = false; showAuth('form'); }
+    });
+    const { data } = await sb.auth.getSession();
+    if (data.session && !loaded) { session = data.session; afterLogin(); }
+    else if (!data.session) showAuth('form');
+  }
+  async function afterLogin() {
+    loaded = true;
+    $('#cloud-box').hidden = false; $('#account').textContent = session.user.email || ''; setSync('loading');
+    const { data, error } = await sb.from('app_state').select('data').eq('user_id', session.user.id).maybeSingle();
+    if (error) {
+      // Hors ligne : on reprend la dernière copie gardée sur cet appareil
+      try { const raw = localStorage.getItem(`${KEY}:${session.user.id}`); if (raw) state = JSON.parse(raw); } catch (e) {}
+      setSync('error'); toast('Impossible de charger tes données en ligne pour le moment');
+    } else {
+      state = data && data.data ? data.data : { creators: [], brand: '', name: '', demo: false };
+      setSync('ok');
+    }
+    state.creators = state.creators || [];
+    usingDemo = !!state.demo;
+    const { data: adm } = await sb.from('admins').select('email').maybeSingle();
+    isAdmin = !!adm; $('#nav-leads').hidden = !isAdmin;
+    $('#auth').hidden = true;
+    applySettings(); render(); go((location.hash || '').slice(1));
+  }
+  /* ---------- Inscrits de la page de vente (visible pour les comptes listés dans la table admins) ---------- */
+  let isAdmin = false, leads = [];
+  const CREATOR_RANGES = { '1-10': '1 à 10', '10-30': '10 à 30', '30-100': '30 à 100', '100+': 'Plus de 100' };
+  const SHOP = { oui: 'Oui', bientot: 'Bientôt', non: 'Non' };
+  async function loadLeads() {
+    $('#leads').innerHTML = '<p class="muted">Chargement…</p>';
+    const { data, error } = await sb.from('leads').select('*').order('created_at', { ascending: false });
+    if (error) { $('#leads').innerHTML = '<p class="muted">Impossible de charger les inscrits. Vérifie ta connexion puis clique sur « Actualiser ».</p>'; return; }
+    leads = data || [];
+    $('#leads').innerHTML = leads.length
+      ? `<table class="data"><thead><tr><th>Date</th><th>Prénom</th><th>E-mail</th><th>Marque</th><th>Créateurs</th><th>TikTok Shop</th><th>Message</th></tr></thead><tbody>${
+          leads.map((l) => `<tr><td>${dShort(l.created_at)}</td><td>${esc(l.first_name)}</td><td>${esc(l.email)}</td><td>${esc(l.brand)}</td><td>${CREATOR_RANGES[l.creators] || esc(l.creators)}</td><td>${SHOP[l.tiktok_shop] || esc(l.tiktok_shop)}</td><td>${esc(l.message)}</td></tr>`).join('')}</tbody></table>`
+      : '<p class="muted">Personne ne s’est encore inscrit. Partage le lien de ta page de vente dans tes messages de prospection.</p>';
+  }
+  $('#leads-refresh').addEventListener('click', loadLeads);
+  $('#leads-copy').addEventListener('click', async () => {
+    const clean = (v) => String(v ?? '').replace(/[\t\r\n]+/g, ' ');
+    const text = [['Date', 'Prénom', 'E-mail', 'Marque', 'Créateurs', 'TikTok Shop', 'Message'].join('\t')]
+      .concat(leads.map((l) => [l.created_at.slice(0, 10), l.first_name, l.email, l.brand, CREATOR_RANGES[l.creators] || l.creators, SHOP[l.tiktok_shop] || l.tiktok_shop, l.message].map(clean).join('\t'))).join('\n');
+    try { await navigator.clipboard.writeText(text); toast(`${leads.length} inscrit${leads.length > 1 ? 's' : ''} copié${leads.length > 1 ? 's' : ''}`); }
+    catch (e) { toast('Copie impossible dans ce navigateur'); }
+  });
+
+  function queueCloudSave() {
+    if (!sb || !session || !loaded) return;
+    setSync('saving'); clearTimeout(saveTimer); clearTimeout(retryTimer);
+    saveTimer = setTimeout(pushCloud, 700);
+  }
+  async function pushCloud() {
+    const { error } = await sb.from('app_state').upsert({ user_id: session.user.id, data: state, updated_at: new Date().toISOString() });
+    if (error) { setSync('error'); retryTimer = setTimeout(pushCloud, 10000); } else setSync('ok');
+  }
+  $('#auth-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = $('#auth-email').value.trim(); if (!email || !sb) return;
+    $('#auth-go').disabled = true;
+    const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin + location.pathname } });
+    $('#auth-go').disabled = false;
+    if (error) showAuth('error', `L’envoi du lien a échoué : ${error.message}. Réessaie dans quelques minutes.`);
+    else showAuth('sent', `Un lien de connexion a été envoyé à ${email}. Ouvre-le sur cet appareil pour accéder à ton espace.`);
+  });
+  $('#logout').addEventListener('click', async () => {
+    clearTimeout(saveTimer);
+    if (session) await pushCloud();
+    await sb.auth.signOut();
+    state = { creators: [], brand: '', name: '', demo: false }; render();
+  });
+
+  const total = (c) => c.sales.reduce((s, x) => s + (+x.a || 0), 0);
+  const comm = (c, amount = total(c)) => amount * (+c.commission || 0) / 100;
+  const alertFor = (c) => { const r = RULES[c.stage]; return r && daysSince(c.last) >= r[0] ? r[1] : null; };
+  const colorFor = (h) => AV[[...h].reduce((a, ch) => a + ch.charCodeAt(0), 0) % AV.length];
+  const avatar = (c) => `<span class="avatar" style="background:${colorFor(c.handle)}">${esc(c.handle.replace('@', '').charAt(0).toUpperCase() || '?')}</span>`;
+  const byId = (id) => state.creators.find((c) => c.id === id);
+
+  // Somme sur les ventes datées entre `from` (exclu) et `to` (inclus) jours en arrière
+  function salesBetween(from, to, fn = (c, x) => +x.a) {
+    let sum = 0;
+    for (const c of state.creators) for (const x of c.sales) { const n = daysSince(x.d); if (n < from && n >= to) sum += fn(c, x); }
+    return sum;
+  }
+  function weeks(fn = (c, x) => +x.a) {
+    const start = new Date(today()); start.setDate(start.getDate() - ((start.getDay() + 6) % 7)); // lundi de cette semaine
+    const out = [];
+    for (let i = 7; i >= 0; i--) { const d = new Date(start); d.setDate(d.getDate() - i * 7); out.push({ start: iso(d), v: 0 }); }
+    for (const c of state.creators) for (const x of c.sales) {
+      const k = Math.floor(dayDiff(out[0].start, x.d) / 7);
+      if (k >= 0 && k < 8) out[k].v += fn(c, x);
+    }
+    return out;
+  }
+
+  /* ---------- Tableau de bord ---------- */
+  function renderDashboard() {
+    $('#today-label').textContent = new Intl.DateTimeFormat('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date());
+    $('#hello').innerHTML = state.name ? `Bonjour <em>${esc(state.name)}</em>, voici tes créateurs` : 'Bonjour, voici tes créateurs';
+
+    const cur = salesBetween(30, 0), prev = salesBetween(60, 30);
+    $('#k-sales').textContent = eur(cur);
+    $('#k-sales-sub').innerHTML = deltaHtml(cur, prev) + ' par rapport aux 30 jours d’avant';
+    $('#k-comm').textContent = eur(salesBetween(30, 0, (c, x) => comm(c, +x.a)));
+    const paying = state.creators.filter((c) => c.sales.some((x) => daysSince(x.d) < 30)).length;
+    $('#k-comm-sub').textContent = `${paying} créateur${paying > 1 ? 's' : ''} à rémunérer`;
+
+    const posted = state.creators.filter((c) => SI[c.stage] >= 3).length;
+    const sampled = state.creators.filter((c) => SI[c.stage] >= 2).length;
+    $('#k-active').textContent = posted;
+    $('#k-active-sub').textContent = sampled ? `sur ${sampled} échantillons envoyés (${Math.round(posted / sampled * 100)} %)` : 'aucun échantillon envoyé';
+
+    const sentCost = state.creators.filter((c) => SI[c.stage] >= 2).reduce((s, c) => s + (+c.cost || 0), 0);
+    const allSales = state.creators.reduce((s, c) => s + total(c), 0);
+    $('#k-roi').textContent = sentCost ? '× ' + nf(allSales / sentCost) : '—';
+    $('#k-roi-sub').textContent = sentCost ? `de ventes pour 1 € d’échantillon (${eur(sentCost)} envoyés)` : 'renseigne le coût de tes échantillons';
+
+    const w = weeks();
+    spark($('#spark-sales'), w.map((x) => x.v), 'var(--accent-ink)');
+    spark($('#spark-comm'), weeks((c, x) => comm(c, +x.a)).map((x) => x.v), 'var(--s4)');
+    weeklyChart(w);
+    weeklyTable(w, weeks((c, x) => comm(c, +x.a)));
+    renderTodo(); renderFunnel(); renderRank();
+  }
+  function deltaHtml(cur, prev) {
+    if (!prev) return cur ? '<span class="delta up">nouveau</span>' : '<span class="delta">—</span>';
+    const p = Math.round((cur - prev) / prev * 100);
+    return `<span class="delta ${p >= 0 ? 'up' : 'down'}">${p >= 0 ? '+' : '−'}${Math.abs(p)} %</span>`;
+  }
+  function spark(svg, vals, color) {
+    const W = 200, H = 40, max = Math.max(...vals, 1);
+    const pts = vals.map((v, i) => [i / (vals.length - 1) * W, H - 4 - v / max * (H - 10)]);
+    const line = pts.map((p) => p.map((n) => n.toFixed(1)).join(',')).join(' ');
+    const last = pts[pts.length - 1];
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    svg.innerHTML = `<polygon points="0,${H} ${line} ${W},${H}" fill="${color}" opacity=".16"/>
+      <polyline points="${line}" fill="none" stroke="${color}" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round"/>
+      <circle cx="${last[0]}" cy="${last[1]}" r="3.5" fill="${color}"/>`;
+  }
+  function niceMax(v) {
+    if (v <= 0) return 100;
+    const p = Math.pow(10, Math.floor(Math.log10(v))), m = v / p;
+    return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 2.5 ? 2.5 : m <= 5 ? 5 : 10) * p;
+  }
+  function barPath(x, y, w, h, r) {
+    r = Math.min(r, h, w / 2);
+    return `M${x},${y + h}V${y + r}Q${x},${y} ${x + r},${y}H${x + w - r}Q${x + w},${y} ${x + w},${y + r}V${y + h}Z`;
+  }
+  function weeklyChart(data) {
+    const box = $('#weekly');
+    if (!box.clientWidth) return;
+    const W = Math.max(300, box.clientWidth), H = 260, L = 56, R = 8, T = 24, B = 30;
+    const pw = W - L - R, ph = H - T - B, max = niceMax(Math.max(...data.map((d) => d.v)) * 1.1);
+    const step = pw / data.length, bw = Math.min(56, step * 0.6);
+    const y = (v) => T + ph - v / max * ph;
+    let g = '';
+    for (let i = 0; i <= 4; i++) {
+      const v = max / 4 * i, yy = y(v).toFixed(1);
+      g += `<line x1="${L}" x2="${W - R}" y1="${yy}" y2="${yy}" stroke="var(--grid)" stroke-width="1"/><text x="${L - 10}" y="${+yy + 4}" text-anchor="end">${i ? nf(v, 0) + ' €' : '0'}</text>`;
+    }
+    let bars = '', hits = '';
+    data.forEach((d, i) => {
+      const x = L + i * step + (step - bw) / 2, h = d.v ? Math.max(2, d.v / max * ph) : 0, last = i === data.length - 1;
+      if (h) bars += `<path d="${barPath(x, T + ph - h, bw, h, 4)}" fill="var(--s5)" opacity="${last ? 1 : .72}"/>`;
+      if (W > 460 || i % 2 === 1) bars += `<text x="${x + bw / 2}" y="${H - 8}" text-anchor="middle">${dShort(d.start)}</text>`;
+      if (last && d.v) bars += `<text class="value" x="${x + bw / 2}" y="${T + ph - h - 8}" text-anchor="middle">${eur(d.v)}</text>`;
+      hits += `<rect x="${L + i * step}" y="${T}" width="${step}" height="${ph}" fill="transparent" data-i="${i}"/>`;
+    });
+    box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Ventes générées par semaine, 8 dernières semaines">${g}<line x1="${L}" x2="${W - R}" y1="${T + ph}" y2="${T + ph}" stroke="var(--line)"/>${bars}${hits}</svg><div class="tip" hidden></div>`;
+    const tip = $('.tip', box);
+    $$('rect[data-i]', box).forEach((r) => {
+      const show = () => {
+        const d = data[+r.dataset.i], end = new Date(d.start); end.setDate(end.getDate() + 6);
+        const bx = box.getBoundingClientRect(), rr = r.getBoundingClientRect();
+        tip.innerHTML = `<b>${eur(d.v)}</b><br>semaine du ${dShort(d.start)} au ${dShort(end)}`;
+        tip.style.left = Math.min(Math.max(rr.left - bx.left + rr.width / 2, 100), bx.width - 100) + 'px';
+        tip.style.top = (y(d.v) / H * bx.height) + 'px';
+        tip.hidden = false;
+      };
+      r.addEventListener('mouseenter', show); r.addEventListener('click', show);
+      r.addEventListener('mouseleave', () => { tip.hidden = true; });
+    });
+  }
+  function weeklyTable(w, wc) {
+    $('#weekly-table').innerHTML = `<table class="data"><thead><tr><th>Semaine du</th><th class="r">Ventes</th><th class="r">Commissions</th></tr></thead><tbody>${
+      w.map((d, i) => `<tr><td>${dShort(d.start)}</td><td class="r">${eur(d.v)}</td><td class="r">${eur(wc[i].v)}</td></tr>`).join('')}</tbody></table>`;
+  }
+  function renderTodo() {
+    const list = state.creators.filter(alertFor).sort((a, b) => daysSince(b.last) - daysSince(a.last));
+    const badge = $('#nav-badge'); badge.hidden = !list.length; badge.textContent = list.length;
+    $('#todo').innerHTML = list.length ? list.map((c) => `<li>
+        ${avatar(c)}
+        <span class="info"><b>${esc(c.handle)}</b><small>${STAGES[SI[c.stage]].label} · il y a ${daysSince(c.last)} j</small></span>
+        <span class="pill">${alertFor(c)}</span>
+        <button class="btn btn-sm" type="button" data-write="${c.id}">Écrire</button>
+        <button class="btn btn-sm btn-ghost" type="button" data-done="${c.id}" aria-label="Marquer ${esc(c.handle)} comme traité aujourd’hui">Fait</button>
+      </li>`).join('') : '<li class="todo-empty">Tout est à jour. Aucun créateur n’attend de relance.</li>';
+  }
+  function renderFunnel() {
+    const counts = STAGES.map((_, i) => state.creators.filter((c) => SI[c.stage] >= i).length), max = Math.max(counts[0], 1);
+    $('#funnel').innerHTML = STAGES.map((s, i) => {
+      const conv = i < STAGES.length - 1 && counts[i] ? Math.round(counts[i + 1] / counts[i] * 100) : null;
+      return `<div class="f-row">
+        <span class="f-label"><span class="dot" style="background:${s.c}"></span>${s.label}</span>
+        <span class="f-track"><span class="f-bar" style="width:${counts[i] / max * 100}%;background:${s.c}"></span></span>
+        <span class="f-count">${counts[i]}</span>
+        ${conv !== null ? `<span class="f-conv">${conv} % passent à « ${STAGES[i + 1].label} »</span>` : ''}
+      </div>`;
+    }).join('');
+  }
+  function renderRank() {
+    const list = state.creators.filter((c) => total(c) > 0).sort((a, b) => total(b) - total(a)).slice(0, 5);
+    const max = list.length ? total(list[0]) : 1;
+    $('#rank').innerHTML = list.length ? list.map((c, i) => `<button class="r-row" type="button" data-open-sales="${c.id}" aria-label="Voir les ventes de ${esc(c.handle)}">
+        <span class="r-pos">${i + 1}</span>${avatar(c)}
+        <span class="r-mid"><b>${esc(c.handle)}</b><span class="r-track"><span class="r-bar" style="width:${total(c) / max * 100}%"></span></span></span>
+        <span class="r-val">${eur(total(c))}<small>${eur(comm(c))} de comm.</small></span>
+      </button>`).join('') : '<p class="muted">Tes créateurs apparaîtront ici dès leur première vente enregistrée.</p>';
+  }
+
+  /* ---------- Créateurs ---------- */
+  function fillSelect(sel, label, values) {
+    const cur = sel.value;
+    sel.innerHTML = `<option value="">${label}</option>` + values.map((v) => `<option>${esc(v)}</option>`).join('');
+    sel.value = values.includes(cur) ? cur : '';
+  }
+  function renderBoard() {
+    fillSelect($('#flt-cat'), 'Toutes les catégories', [...new Set(state.creators.map((c) => c.cat))].sort());
+    fillSelect($('#flt-prod'), 'Tous les produits', [...new Set(state.creators.map((c) => c.product).filter(Boolean))].sort());
+    const q = $('#search').value.trim().toLowerCase(), cat = $('#flt-cat').value, prod = $('#flt-prod').value, onlyAlerts = $('#flt-alert').checked;
+    const list = state.creators.filter((c) => (!q || [c.handle, c.product, c.cat, c.notes].join(' ').toLowerCase().includes(q))
+      && (!cat || c.cat === cat) && (!prod || c.product === prod) && (!onlyAlerts || alertFor(c)));
+    $('#board').innerHTML = STAGES.map((s, i) => {
+      const cards = list.filter((c) => c.stage === s.id);
+      return `<div class="col" data-stage="${s.id}" style="--c:${s.c}">
+        <div class="col-head"><h3><span class="dot" style="background:${s.c}"></span>${s.label}</h3><span class="count">${cards.length}</span></div>
+        ${cards.length ? cards.map((c) => card(c, i)).join('') : '<div class="col-empty">Glisse un créateur ici</div>'}
+      </div>`;
+    }).join('');
+  }
+  function card(c, i) {
+    const a = alertFor(c), d = daysSince(c.last), t = total(c);
+    return `<div class="card" draggable="true" data-id="${c.id}" tabindex="0" role="button" aria-label="Ouvrir la fiche de ${esc(c.handle)}">
+      <div class="card-top">${avatar(c)}<span class="card-id"><b>${esc(c.handle)}</b><small>${esc(c.cat)} · ${kFmt(+c.followers)} abonnés</small></span></div>
+      ${c.product ? `<small class="hint">${esc(c.product)} · ${+c.commission || 0} %</small>` : ''}
+      ${t ? `<div class="money num"><b>${eur(t)}</b><span>${eur(comm(c))} de comm.</span></div>` : ''}
+      <div class="card-foot">${a ? `<span class="pill">${a}</span>` : `<span>${d === 0 ? 'aujourd’hui' : 'il y a ' + d + ' j'}</span>`}
+      ${i < STAGES.length - 1 ? `<button class="next" type="button" data-next="${c.id}">Suivant →</button>` : ''}</div>
+    </div>`;
+  }
+
+  function render() {
+    renderDashboard(); renderBoard();
+    $('#data-note').textContent = usingDemo ? 'Données d’exemple, enregistrées dans ce navigateur.' : 'Tes données sont enregistrées dans ce navigateur.';
+  }
+  function commit(msg, undo) { save(); render(); if (msg) toast(msg, undo); }
+
+  /* ---------- Navigation ---------- */
+  function go(view) {
+    if (!['tableau', 'createurs', 'inscrits'].includes(view) || (view === 'inscrits' && !isAdmin)) view = 'tableau';
+    $('#view-tableau').hidden = view !== 'tableau';
+    $('#view-createurs').hidden = view !== 'createurs';
+    $('#view-inscrits').hidden = view !== 'inscrits';
+    if (view === 'inscrits') loadLeads();
+    $$('.nav button').forEach((b) => { if (b.dataset.view === view) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
+    try { history.replaceState(null, '', '#' + view); } catch (e) {}
+    if (view === 'tableau') weeklyChart(weeks());
+  }
+  $$('.nav button').forEach((b) => b.addEventListener('click', () => go(b.dataset.view)));
+
+  /* ---------- Glisser-déposer et actions ---------- */
+  const board = $('#board');
+  board.addEventListener('dragstart', (e) => {
+    const el = e.target.closest('.card'); if (!el) return;
+    el.classList.add('dragging'); e.dataTransfer.setData('text/plain', el.dataset.id); e.dataTransfer.effectAllowed = 'move';
+  });
+  board.addEventListener('dragend', (e) => e.target.closest('.card')?.classList.remove('dragging'));
+  board.addEventListener('dragover', (e) => {
+    const col = e.target.closest('.col'); if (!col) return;
+    e.preventDefault(); $$('.col.drop', board).forEach((c) => c !== col && c.classList.remove('drop')); col.classList.add('drop');
+  });
+  board.addEventListener('dragleave', (e) => { const col = e.target.closest('.col'); if (col && !col.contains(e.relatedTarget)) col.classList.remove('drop'); });
+  board.addEventListener('drop', (e) => { const col = e.target.closest('.col'); if (!col) return; e.preventDefault(); moveTo(e.dataTransfer.getData('text/plain'), col.dataset.stage); });
+  board.addEventListener('click', (e) => {
+    const nx = e.target.closest('[data-next]');
+    if (nx) { const c = byId(nx.dataset.next); moveTo(c.id, STAGES[SI[c.stage] + 1].id); return; }
+    const el = e.target.closest('.card'); if (el) openDialog(el.dataset.id);
+  });
+  board.addEventListener('keydown', (e) => { if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('card')) { e.preventDefault(); openDialog(e.target.dataset.id); } });
+  $('#todo').addEventListener('click', (e) => {
+    const w = e.target.closest('[data-write]'); if (w) { const c = byId(w.dataset.write); openDialog(c.id, 'msg', c.stage === 'trouve' ? 'invite' : 'relance'); return; }
+    const d = e.target.closest('[data-done]');
+    if (d) { const c = byId(d.dataset.done), snap = snapshot(); c.last = today(); addLog(c, 'Action faite'); commit(`${c.handle} : action notée`, () => restore(snap)); }
+  });
+  $('#rank').addEventListener('click', (e) => { const b = e.target.closest('[data-open-sales]'); if (b) openDialog(b.dataset.openSales, 'sales'); });
+  $$('[data-add]').forEach((b) => b.addEventListener('click', () => openDialog(null)));
+
+  function moveTo(id, stage) {
+    const c = byId(id); if (!c || c.stage === stage) { render(); return; }
+    const snap = snapshot();
+    c.stage = stage; c.last = today(); addLog(c, `Passé à « ${STAGES[SI[stage]].label} »`);
+    commit(`${c.handle} → ${STAGES[SI[stage]].label}`, () => restore(snap));
+  }
+  function addLog(c, t) { (c.log = c.log || []).push({ d: new Date().toISOString(), t }); if (c.log.length > 50) c.log.shift(); }
+  const snapshot = () => JSON.stringify(state.creators);
+  function restore(snap) { state.creators = JSON.parse(snap); commit('Modification annulée'); }
+
+  /* ---------- Fenêtre fiche ---------- */
+  const dlg = $('#dlg');
+  let editing = null, draftSales = [], tpl = 'invite', delArmed = false;
+  $('#f-cat').innerHTML = CATS.map((c) => `<option>${c}</option>`).join('');
+  $('#f-stage').innerHTML = STAGES.map((s) => `<option value="${s.id}">${s.label}</option>`).join('');
+
+  function openDialog(id, tab = 'info', template) {
+    editing = id ? byId(id) : null;
+    const c = editing || { handle: '', cat: 'Beauté', followers: '', commission: 15, product: '', cost: 15, stage: 'trouve', last: today(), notes: '', sales: [] };
+    draftSales = c.sales.map((x) => ({ ...x }));
+    $('#dlg-title').textContent = editing ? c.handle : 'Nouveau créateur';
+    const av = $('#dlg-avatar');
+    av.textContent = editing ? c.handle.replace('@', '').charAt(0).toUpperCase() : '+';
+    av.style.background = editing ? colorFor(c.handle) : 'var(--accent)';
+    $('#f-handle').value = c.handle; $('#f-cat').value = c.cat; $('#f-followers').value = c.followers;
+    $('#f-commission').value = c.commission; $('#f-product').value = c.product; $('#f-cost').value = c.cost;
+    $('#f-stage').value = c.stage; $('#f-last').value = c.last; $('#f-notes').value = c.notes;
+    $('#sale-date').value = today(); $('#sale-amount').value = '';
+    $('#del-btn').hidden = !editing; $('#done-btn').hidden = !editing; $('#sent-btn').hidden = !editing;
+    const tk = $('#dlg-tiktok'); tk.hidden = !editing;
+    if (editing) tk.href = 'https://www.tiktok.com/' + encodeURIComponent(c.handle);
+    const log = (c.log || []).slice(-8).reverse();
+    $('#log-wrap').hidden = !editing;
+    $('#log').innerHTML = log.length ? log.map((l) => `<li><time>${dShort(l.d)} ${new Date(l.d).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</time><span>${esc(l.t)}</span></li>`).join('') : '<li class="muted">Rien d’enregistré pour l’instant. Les déplacements, ventes et messages envoyés apparaîtront ici.</li>';
+    if (template) { tpl = template; $$('[data-tpl]').forEach((x) => x.setAttribute('aria-pressed', x.dataset.tpl === tpl)); }
+    delArmed = false; $('#del-btn').textContent = 'Supprimer';
+    showTab(tab);
+    dlg.showModal();
+    if (tab === 'info') $('#f-handle').focus();
+  }
+  function current() {
+    return {
+      handle: at($('#f-handle').value), cat: $('#f-cat').value, followers: +$('#f-followers').value || 0,
+      commission: +$('#f-commission').value || 0, product: $('#f-product').value.trim(), cost: +$('#f-cost').value || 0,
+      stage: $('#f-stage').value, last: $('#f-last').value || today(), notes: $('#f-notes').value.trim(), sales: draftSales,
+    };
+  }
+  function showTab(t) {
+    $$('[data-tab]').forEach((b) => b.setAttribute('aria-selected', b.dataset.tab === t));
+    $$('[data-pane]').forEach((p) => { p.hidden = p.dataset.pane !== t; });
+    $('#copy-btn').hidden = t !== 'msg';
+    if (t === 'msg') { writeMessage(); aiNote(); }
+    if (t === 'sales') renderSales();
+  }
+  $$('[data-tab]').forEach((b) => b.addEventListener('click', () => showTab(b.dataset.tab)));
+
+  function renderSales() {
+    const c = current(), t = total(c);
+    $('#sales-calc').textContent = t
+      ? `${eur(t)} de ventes générées · commission due : ${eur(comm(c, t))} (${c.commission} %)`
+      : `Aucune vente enregistrée. Commission prévue : ${c.commission} % de chaque vente.`;
+    $('#sales-list').innerHTML = [...draftSales].sort((a, b) => b.d.localeCompare(a.d)).map((x) =>
+      `<li><span>${dShort(x.d)}</span><b>${eur(x.a)}</b><button type="button" data-del-sale="${x.id}" aria-label="Supprimer la vente du ${dShort(x.d)}">×</button></li>`).join('');
+  }
+  $('#sale-add').addEventListener('click', () => {
+    const a = +$('#sale-amount').value;
+    if (!a) { $('#sale-amount').focus(); toast('Indique le montant des ventes'); return; }
+    draftSales.push({ id: uid(), d: $('#sale-date').value || today(), a });
+    $('#sale-amount').value = ''; renderSales();
+  });
+  $('#sales-list').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-del-sale]'); if (!b) return;
+    draftSales = draftSales.filter((x) => x.id !== b.dataset.delSale); renderSales();
+  });
+
+  $$('[data-tpl]').forEach((b) => b.addEventListener('click', () => {
+    tpl = b.dataset.tpl; $$('[data-tpl]').forEach((x) => x.setAttribute('aria-pressed', x === b)); writeMessage(); aiNote();
+  }));
+  function writeMessage() {
+    const c = current(), h = c.handle || '@pseudo';
+    const brand = state.brand || '[ta marque]', me = state.name || '[ton prénom]', p = c.product || '[ton produit]', t = total(c);
+    const T = {
+      invite: `Bonjour ${h} 👋\n\nJe suis ${me}, de ${brand}. J’adore tes vidéos ${c.cat.toLowerCase()}, ton style colle parfaitement à notre univers.\n\nJ’aimerais t’envoyer gratuitement notre ${p} pour que tu le testes. Si tu l’aimes et que tu en parles, tu touches ${c.commission} % de commission sur chaque vente via TikTok Shop (lien affilié dans ta vitrine).\n\nÇa te dirait ? Si oui, envoie-moi ton adresse et je t’expédie le colis cette semaine.\n\n${me}`,
+      relance: `Coucou ${h} !\n\nJe reviens vers toi au sujet de notre ${p}. ${c.stage === 'echantillon' ? 'Tu as bien reçu le colis ? Tu as pu le tester ?' : 'Tu as eu le temps de voir mon message ?'}\n\nAucune pression : dis-moi simplement si ça t’intéresse toujours. La commission de ${c.commission} % tient toujours, et je peux t’envoyer des idées de vidéo si ça t’aide.\n\nBelle journée,\n${me} (${brand})`,
+      brief: `Brief vidéo · ${p}\n\nAccroche (3 premières secondes) :\n• « Je teste le ${p} dont tout le monde parle… »\n• ou montre directement le résultat avant / après.\n\nÀ montrer :\n• Le produit en main, en situation réelle.\n• 1 ou 2 avantages concrets, avec tes mots.\n• Ton avis honnête.\n\nÀ la fin :\n• « Le lien est dans ma vitrine TikTok Shop. »\n\nFormat : 20 à 45 secondes, vertical, son tendance.\nCommission : ${c.commission} % sur chaque vente.\n\nMerci ${h} !\n${me} (${brand})`,
+      merci: `Merci ${h} 🙏\n\nTa vidéo sur le ${p} est top${t ? ` : elle a déjà généré ${eur(t)} de ventes, soit ${eur(comm(c, t))} de commission pour toi` : ''} !\n\nOn aimerait continuer ensemble : partant·e pour une deuxième vidéo, ou pour tester un autre produit de ${brand} ?\n\n${me}`,
+    };
+    $('#msg-out').value = T[tpl];
+  }
+  $('#copy-btn').addEventListener('click', async () => {
+    const ta = $('#msg-out');
+    try { await navigator.clipboard.writeText(ta.value); toast('Message copié'); }
+    catch (e) { ta.focus(); ta.select(); toast('Texte sélectionné : fais Ctrl+C pour le copier'); }
+  });
+
+  $('#form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const data = current();
+    if (!data.handle) { showTab('info'); $('#f-handle').focus(); toast('Ajoute au moins le pseudo du créateur'); return; }
+    if (state.creators.some((c) => c !== editing && c.handle.toLowerCase() === data.handle.toLowerCase())) { showTab('info'); $('#f-handle').focus(); toast(`${data.handle} est déjà dans ta liste`); return; }
+    if (editing) {
+      if (editing.stage !== data.stage) { if (data.last === editing.last) data.last = today(); addLog(editing, `Passé à « ${STAGES[SI[data.stage]].label} »`); }
+      const added = data.sales.length - editing.sales.length;
+      if (added > 0) addLog(editing, added > 1 ? `${added} ventes ajoutées` : 'Vente ajoutée');
+      Object.assign(editing, data); commit('Fiche enregistrée');
+    } else {
+      const c = { id: uid(), ...data, log: [] }; addLog(c, 'Ajouté à la liste');
+      state.creators.push(c); commit(`${data.handle} ajouté`);
+    }
+    dlg.close();
+  });
+  $('#done-btn').addEventListener('click', () => { $('#f-last').value = today(); if (editing) { editing.last = today(); commit('Action notée pour aujourd’hui'); } });
+  $('#del-btn').addEventListener('click', () => {
+    if (!delArmed) { delArmed = true; $('#del-btn').textContent = 'Confirmer la suppression'; return; }
+    const snap = snapshot(), h = editing.handle;
+    state.creators = state.creators.filter((c) => c !== editing); dlg.close(); commit(`${h} supprimé`, () => restore(snap));
+  });
+  $('#dlg-close').addEventListener('click', () => dlg.close());
+
+  /* ---------- Rédaction par IA (fonction serveur Supabase « generate-message ») ---------- */
+  const AI_LABEL = '✨ Rédiger avec l’IA';
+  function aiNote() {
+    $('#ai-note').textContent = sb && session
+      ? 'L’IA écrit un message sur mesure à partir de la fiche du créateur. Relis-le toujours avant de l’envoyer.'
+      : 'Mode démo : la rédaction par IA sur mesure est disponible dans la version en ligne, une fois connecté.';
+  }
+  $('#ai-btn').addEventListener('click', async () => {
+    if (!sb || !session) { toast('La rédaction par IA est disponible dans la version en ligne, une fois connecté'); return; }
+    const c = current(), btn = $('#ai-btn');
+    btn.disabled = true; btn.textContent = 'Rédaction en cours…';
+    const { data, error } = await sb.functions.invoke('generate-message', {
+      body: {
+        kind: tpl, brand: state.brand, name: state.name, instruction: $('#ai-instr').value.trim(),
+        creator: { handle: c.handle, cat: c.cat, followers: c.followers, commission: c.commission, product: c.product, stage: c.stage, notes: c.notes, sales: total(c), daysSince: daysSince(c.last) },
+      },
+    });
+    btn.disabled = false; btn.textContent = AI_LABEL;
+    if (error || !data?.text) {
+      let msg = 'La rédaction a échoué. Vérifie ta connexion et réessaie.';
+      try { const b = await error.context.json(); if (b.error) msg = b.error; } catch (e) {}
+      toast(msg); return;
+    }
+    $('#msg-out').value = data.text;
+    $('#ai-note').textContent = `Rédigé par l’IA · ${data.remaining} message${data.remaining > 1 ? 's' : ''} IA restant${data.remaining > 1 ? 's' : ''} aujourd’hui. Relis-le avant de l’envoyer.`;
+  });
+
+  const TPL_LABEL = { invite: 'Invitation', relance: 'Relance', brief: 'Brief vidéo', merci: 'Remerciement' };
+  $('#sent-btn').addEventListener('click', () => {
+    if (!editing) return;
+    const snap = snapshot();
+    editing.last = today(); $('#f-last').value = today();
+    addLog(editing, `Message envoyé : ${TPL_LABEL[tpl]}`);
+    if (tpl === 'invite' && editing.stage === 'trouve') { editing.stage = 'contacte'; $('#f-stage').value = 'contacte'; addLog(editing, 'Passé à « Contactés »'); }
+    dlg.close();
+    commit(`${editing.handle} : message noté`, () => restore(snap));
+  });
+
+  /* ---------- Copier pour Excel ---------- */
+  const COLS = ['Pseudo', 'Catégorie', 'Abonnés', 'Produit', 'Commission (%)', 'Coût échantillon (€)', 'Étape', 'Dernière action', 'Ventes (€)', 'Commission due (€)', 'Notes'];
+  $('#export-btn').addEventListener('click', async () => {
+    const clean = (v) => String(v ?? '').replace(/[\t\r\n]+/g, ' ');
+    const lines = [COLS.join('\t')].concat(state.creators.map((c) => [c.handle, c.cat, c.followers, c.product, c.commission, c.cost, STAGES[SI[c.stage]].label, c.last, total(c), Math.round(comm(c)), c.notes].map(clean).join('\t')));
+    const text = lines.join('\n');
+    try { await navigator.clipboard.writeText(text); toast(`${state.creators.length} créateurs copiés : colle-les dans Excel ou Google Sheets`); }
+    catch (e) {
+      openImport(); $('#imp-title').textContent = 'Copier ta liste'; $('#imp-text').value = text; $('#imp-text').select();
+      toast('Texte sélectionné : fais Ctrl+C pour le copier');
+    }
+  });
+
+  /* ---------- Import ---------- */
+  const imp = $('#imp');
+  let parsed = [];
+  function openImport() {
+    $('#imp-title').textContent = 'Importer des créateurs';
+    $('#imp-text').value = ''; parsed = []; previewImport();
+    $('#imp-replace-wrap').hidden = !usingDemo; $('#imp-replace').checked = usingDemo;
+    imp.showModal();
+  }
+  $('#imp-open').addEventListener('click', openImport);
+  $('#imp-close').addEventListener('click', () => imp.close());
+  $('#imp-cancel').addEventListener('click', () => imp.close());
+
+  function splitLine(line, sep) {
+    if (sep === '\t') return line.split('\t').map((s) => s.trim());
+    const out = []; let cur = '', q = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') { if (q && line[i + 1] === '"') { cur += '"'; i++; } else q = !q; }
+      else if (ch === sep && !q) { out.push(cur.trim()); cur = ''; }
+      else cur += ch;
+    }
+    out.push(cur.trim()); return out;
+  }
+  const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  // L'ordre compte : « Nombre d'abonnés » doit être reconnu avant le motif « nom » du pseudo
+  const FIELD = [
+    ['followers', /abonn|follower|audience/],
+    ['cat', /categ|niche|univers/],
+    ['product', /produit|product|article/],
+    ['commission', /commission|%|taux/],
+    ['stage', /etape|statut|status|stade/],
+    ['notes', /note|comment|remarque/],
+    ['handle', /pseudo|handle|tiktok|createur|compte|nom|user/],
+  ];
+  function parseFollowers(v) {
+    const s = norm(v).replace(/\s/g, '').replace(',', '.'); const n = parseFloat(s);
+    if (isNaN(n)) return 0;
+    return Math.round(s.includes('m') ? n * 1e6 : s.includes('k') ? n * 1e3 : n);
+  }
+  function parseStage(v) {
+    const s = norm(v);
+    if (/vente|vend/.test(s)) return 'vend';
+    if (/video|post|publi/.test(s)) return 'video';
+    if (/echant|colis|envoy/.test(s)) return 'echantillon';
+    if (/contact|relanc|dm|message/.test(s)) return 'contacte';
+    return 'trouve';
+  }
+  function parseCat(v) { const s = norm(v); return CATS.find((c) => norm(c) === s) || (v ? v.charAt(0).toUpperCase() + v.slice(1) : 'Autre'); }
+  function parseImport(text) {
+    const lines = text.split(/\r?\n/).filter((l) => l.trim());
+    if (!lines.length) return [];
+    const first = lines[0], sep = first.includes('\t') ? '\t' : (first.split(';').length > first.split(',').length ? ';' : ',');
+    let rows = lines.map((l) => splitLine(l, sep)), map = null;
+    const head = rows[0].map(norm);
+    if (head.some((h) => FIELD.some(([, re]) => re.test(h)) && !/^@/.test(h))) {
+      map = {}; head.forEach((h, i) => { const f = FIELD.find(([k, re]) => re.test(h) && !(k in map)); if (f) map[f[0]] = i; });
+      rows = rows.slice(1);
+    }
+    if (!map || !('handle' in map)) map = { handle: 0, followers: 1, cat: 2, product: 3, commission: 4 };
+    const get = (r, k) => (k in map ? r[map[k]] || '' : '');
+    return rows.map((r) => ({
+      handle: at(get(r, 'handle')), followers: parseFollowers(get(r, 'followers')), cat: parseCat(get(r, 'cat')),
+      product: get(r, 'product'), commission: parseFloat(String(get(r, 'commission')).replace(',', '.')) || 15,
+      stage: parseStage(get(r, 'stage')), notes: get(r, 'notes'),
+    })).filter((c) => c.handle.length > 1);
+  }
+  function previewImport() {
+    parsed = parseImport($('#imp-text').value);
+    const replace = $('#imp-replace').checked && usingDemo;
+    const existing = new Set((replace ? [] : state.creators).map((c) => c.handle.toLowerCase()));
+    const seen = new Set();
+    parsed.forEach((c) => { const k = c.handle.toLowerCase(); c.dup = existing.has(k) || seen.has(k); seen.add(k); });
+    const fresh = parsed.filter((c) => !c.dup), dups = parsed.length - fresh.length;
+    const box = $('#imp-preview');
+    box.hidden = !$('#imp-text').value.trim();
+    box.innerHTML = parsed.length
+      ? `<b>${fresh.length} créateur${fresh.length > 1 ? 's' : ''} prêt${fresh.length > 1 ? 's' : ''} à importer${dups ? ` · ${dups} déjà dans ta liste, ignoré${dups > 1 ? 's' : ''}` : ''}</b>
+         <div class="table-wrap"><table><thead><tr><th>Pseudo</th><th>Abonnés</th><th>Catégorie</th><th>Produit</th><th>Comm.</th><th>Étape</th></tr></thead><tbody>${
+           fresh.slice(0, 5).map((c) => `<tr><td>${esc(c.handle)}</td><td>${kFmt(c.followers)}</td><td>${esc(c.cat)}</td><td>${esc(c.product) || '—'}</td><td>${c.commission} %</td><td>${STAGES[SI[c.stage]].label}</td></tr>`).join('')}</tbody></table></div>
+         ${fresh.length > 5 ? `<span class="hint">et ${fresh.length - 5} autre${fresh.length - 5 > 1 ? 's' : ''}</span>` : ''}`
+      : 'Aucun pseudo reconnu. Vérifie que la première colonne contient les pseudos TikTok, ou ajoute une ligne de titres.';
+    $('#imp-go').disabled = !fresh.length;
+    $('#imp-go').textContent = fresh.length ? `Importer ${fresh.length} créateur${fresh.length > 1 ? 's' : ''}` : 'Importer';
+  }
+  $('#imp-text').addEventListener('input', previewImport);
+  $('#imp-replace').addEventListener('change', previewImport);
+  function readFile(file) {
+    if (!file) return;
+    const r = new FileReader();
+    r.onload = () => { $('#imp-text').value = String(r.result || ''); previewImport(); };
+    r.readAsText(file);
+  }
+  $('#imp-file').addEventListener('change', (e) => readFile(e.target.files[0]));
+  const drop = $('#imp-drop');
+  drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('over'); });
+  drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+  drop.addEventListener('drop', (e) => { e.preventDefault(); drop.classList.remove('over'); readFile(e.dataTransfer.files[0]); });
+  $('#imp-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const fresh = parsed.filter((c) => !c.dup); if (!fresh.length) return;
+    const snap = snapshot(), wasDemo = usingDemo;
+    if ($('#imp-replace').checked && usingDemo) state.creators = [];
+    usingDemo = false;
+    fresh.forEach(({ dup, ...c }) => {
+      const cr = { id: uid(), ...c, cost: 15, last: today(), sales: [], log: [] };
+      addLog(cr, 'Importé'); state.creators.push(cr);
+    });
+    imp.close(); go('createurs');
+    commit(`${fresh.length} créateur${fresh.length > 1 ? 's' : ''} importé${fresh.length > 1 ? 's' : ''}`, () => { usingDemo = wasDemo; restore(snap); });
+  });
+
+  /* ---------- Réglages ---------- */
+  $('#s-brand').addEventListener('input', (e) => { state.brand = e.target.value; save(); });
+  $('#s-name').addEventListener('input', (e) => { state.name = e.target.value; save(); renderDashboard(); });
+  ['#search', '#flt-cat', '#flt-prod', '#flt-alert'].forEach((s) => $(s).addEventListener(s === '#search' ? 'input' : 'change', renderBoard));
+  let clearArmed = false;
+  $('#clear-all').addEventListener('click', () => {
+    if (!clearArmed) { clearArmed = true; $('#clear-all').textContent = 'Confirmer : tout effacer'; return; }
+    clearArmed = false; $('#clear-all').textContent = 'Tout effacer';
+    state.creators = []; usingDemo = false; commit('Tableau vidé : ajoute ton premier créateur');
+  });
+  $('#reset-demo').addEventListener('click', () => { state.creators = demo(); usingDemo = true; commit('Exemples rechargés'); });
+  $('#show-chart').addEventListener('click', () => { $('#weekly').hidden = false; $('#weekly-table').hidden = true; $('#show-chart').setAttribute('aria-pressed', 'true'); $('#show-table').setAttribute('aria-pressed', 'false'); weeklyChart(weeks()); });
+  $('#show-table').addEventListener('click', () => { $('#weekly').hidden = true; $('#weekly-table').hidden = false; $('#show-chart').setAttribute('aria-pressed', 'false'); $('#show-table').setAttribute('aria-pressed', 'true'); });
+
+  let toastTimer, toastUndo = null;
+  function toast(msg, undo) {
+    const t = $('#toast'); $('#toast-msg').textContent = msg;
+    toastUndo = undo || null; $('#toast-undo').hidden = !undo; t.hidden = false;
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; toastUndo = null; }, undo ? 6000 : 2200);
+  }
+  $('#toast-undo').addEventListener('click', () => { const u = toastUndo; toastUndo = null; $('#toast').hidden = true; if (u) u(); });
+  let rz; window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { if (!$('#view-tableau').hidden) weeklyChart(weeks()); }, 120); });
+
+  function applySettings() { $('#s-brand').value = state.brand || ''; $('#s-name').value = state.name || ''; }
+
+  if (cloudOn()) {
+    state = { creators: [], brand: '', name: '', demo: false }; usingDemo = false;
+    render(); bootCloud();
+  } else {
+    load(); applySettings(); render();
+    go((location.hash || '').slice(1));
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,7 +1,7 @@
 # Activer les comptes et la sauvegarde en ligne
 
 Sans configuration, Créapilot fonctionne en **mode démo** : les données restent dans le navigateur.
-Avec Supabase, chaque client se connecte par e-mail (lien magique, sans mot de passe) et ses données sont sauvegardées en ligne.
+Avec Supabase, chaque client se connecte par e-mail (lien magique, sans mot de passe) et ses données sont sauvegardées en ligne. Le formulaire de la page de vente enregistre aussi les inscriptions.
 
 Compte 15 minutes.
 
@@ -27,11 +27,13 @@ Le lien de connexion envoyé par e-mail doit ramener vers une vraie adresse web 
 1. Sur GitHub, dans ce dépôt : **Settings** → **Pages**.
 2. Source : **Deploy from a branch**, branche `main` (ou la branche de travail), dossier `/ (root)`.
 3. Note l’adresse obtenue, par exemple `https://light669.github.io/jarvis/`.
+   - La page de vente est à cette adresse.
+   - L’application est à la même adresse suivie de `app.html`, par exemple `https://light669.github.io/jarvis/app.html`.
 
 ## 4. Autoriser cette adresse dans Supabase
 
 1. **Authentication** → **URL Configuration**.
-2. **Site URL** : l’adresse de l’étape 3.
+2. **Site URL** : l’adresse de l’application (celle qui finit par `app.html`).
 3. **Redirect URLs** : ajoute la même adresse.
 
 ## 5. Brancher l’application
@@ -40,11 +42,19 @@ Le lien de connexion envoyé par e-mail doit ramener vers une vraie adresse web 
 2. Copie :
    - **Project URL** (du type `https://abcd1234.supabase.co`)
    - la clé **anon public**
-3. Dans `index.html`, remplis la ligne :
+3. Dans le fichier `config.js`, remplis les deux valeurs :
    ```js
-   const CLOUD = { url: '', anonKey: '' };
+   window.CREAPILOT_CONFIG = {
+     supabaseUrl: 'https://abcd1234.supabase.co',
+     supabaseAnonKey: 'la-clé-anon-public',
+   };
    ```
-   Tu peux aussi m’envoyer ces deux valeurs et je fais la modification.
+   Ce fichier sert à la fois à l’application et à la page de vente. Tu peux aussi m’envoyer ces deux valeurs et je fais la modification.
+4. **Voir les inscrits de la page de vente** : connecte-toi une première fois à l’application avec ton adresse e-mail, puis dans **SQL Editor**, exécute (avec ton adresse) :
+   ```sql
+   insert into public.admins (email) values ('ton.adresse@exemple.fr') on conflict do nothing;
+   ```
+   Recharge l’application : un onglet **Inscrits** apparaît dans la barre latérale, avec la liste des marques qui ont rempli le formulaire.
 
 La clé **anon public** peut être partagée : elle est faite pour être dans le navigateur, et les règles de la table empêchent chaque utilisateur de voir les données des autres.
 

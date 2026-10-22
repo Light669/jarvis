@@ -4,7 +4,15 @@ MVP d’un CRM pour les vendeurs **TikTok Shop** : suivre ses créateurs affili�
 
 > « Créapilot » est un nom provisoire.
 
-*Pilote tes créateurs, pas ton tableur.* Le guide de marque (logo, couleurs, typographie, ton) est dans `brand.html`.
+*Pilote tes créateurs, pas ton tableur.*
+
+| Fichier | Rôle |
+|---|---|
+| `index.html` | Page de vente, avec le formulaire « Réserver ma place fondateur » |
+| `app.html` | L’application Créapilot |
+| `brand.html` | Guide de marque (logo, couleurs, typographie, ton) |
+| `config.js` | Clés Supabase partagées par la page de vente et l’application |
+| `supabase/` | Schéma de la base et fonction serveur de rédaction par IA |
 
 ## Ce que fait le MVP
 
@@ -18,11 +26,12 @@ MVP d’un CRM pour les vendeurs **TikTok Shop** : suivre ses créateurs affili�
 - **Import et export** : coller une liste depuis Excel ou Google Sheets (ou déposer un CSV), et copier toute la liste pour la recoller dans un tableur.
 - **Filtres** : catégorie, produit, « à relancer seulement ».
 - **Historique** par créateur, bouton « J’ai envoyé ce message » et annulation de la dernière action.
+- **Inscrits** (compte administrateur) : la liste des marques inscrites depuis la page de vente.
 - **Fiche créateur** : catégorie, abonnés, commission, produit, ventes, notes.
 
 ## Lancer l’application
 
-Aucune installation : ouvrir `index.html` dans un navigateur.
+Aucune installation : ouvrir `index.html` (page de vente) ou `app.html` (application) dans un navigateur.
 
 Pour la mettre en ligne gratuitement : activer **GitHub Pages** sur ce dépôt (Settings → Pages → branche `main`, dossier `/`), ou glisser le dossier sur Netlify Drop.
 

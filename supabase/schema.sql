@@ -33,3 +33,38 @@ create table if not exists public.ai_usage (
   primary key (user_id, day)
 );
 alter table public.ai_usage enable row level security;
+
+-- Inscriptions au programme fondateur (formulaire de la page de vente).
+create table if not exists public.leads (
+  id          bigint generated always as identity primary key,
+  created_at  timestamptz not null default now(),
+  first_name  text not null check (char_length(first_name) between 1 and 80),
+  email       text not null check (char_length(email) between 3 and 200 and position('@' in email) > 1),
+  brand       text check (char_length(brand) <= 120),
+  creators    text check (char_length(creators) <= 20),
+  tiktok_shop text check (char_length(tiktok_shop) <= 20),
+  message     text check (char_length(message) <= 1000)
+);
+alter table public.leads enable row level security;
+
+-- Comptes autorisés à voir les inscrits dans l’application (onglet « Inscrits »).
+create table if not exists public.admins (
+  email text primary key
+);
+alter table public.admins enable row level security;
+
+drop policy if exists "Formulaire public" on public.leads;
+drop policy if exists "Les admins lisent les inscrits" on public.leads;
+drop policy if exists "Voir son statut admin" on public.admins;
+
+-- Tout le monde peut s’inscrire, personne ne peut lire la liste sauf les admins.
+create policy "Formulaire public" on public.leads
+  for insert to anon, authenticated with check (true);
+create policy "Les admins lisent les inscrits" on public.leads
+  for select to authenticated
+  using (exists (select 1 from public.admins a where a.email = auth.jwt() ->> 'email'));
+create policy "Voir son statut admin" on public.admins
+  for select to authenticated using (email = auth.jwt() ->> 'email');
+
+-- À faire une fois, avec TON adresse e-mail (celle de ta connexion à Créapilot) :
+-- insert into public.admins (email) values ('ton.adresse@exemple.fr') on conflict do nothing;

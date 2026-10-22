@@ -10,18 +10,18 @@ create table if not exists public.app_state (
 -- Chaque utilisateur ne peut lire et modifier que ses propres données.
 alter table public.app_state enable row level security;
 
-drop policy if exists "Lire ses données" on public.app_state;
-drop policy if exists "Créer ses données" on public.app_state;
-drop policy if exists "Modifier ses données" on public.app_state;
-drop policy if exists "Supprimer ses données" on public.app_state;
+drop policy if exists app_state_select on public.app_state;
+drop policy if exists app_state_insert on public.app_state;
+drop policy if exists app_state_update on public.app_state;
+drop policy if exists app_state_delete on public.app_state;
 
-create policy "Lire ses données" on public.app_state
+create policy app_state_select on public.app_state
   for select using (auth.uid() = user_id);
-create policy "Créer ses données" on public.app_state
+create policy app_state_insert on public.app_state
   for insert with check (auth.uid() = user_id);
-create policy "Modifier ses données" on public.app_state
+create policy app_state_update on public.app_state
   for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
-create policy "Supprimer ses données" on public.app_state
+create policy app_state_delete on public.app_state
   for delete using (auth.uid() = user_id);
 
 -- Compteur d’utilisation de la rédaction par IA (limite quotidienne par compte).
@@ -53,17 +53,17 @@ create table if not exists public.admins (
 );
 alter table public.admins enable row level security;
 
-drop policy if exists "Formulaire public" on public.leads;
-drop policy if exists "Les admins lisent les inscrits" on public.leads;
-drop policy if exists "Voir son statut admin" on public.admins;
+drop policy if exists leads_public_insert on public.leads;
+drop policy if exists leads_admin_select on public.leads;
+drop policy if exists admins_self_select on public.admins;
 
 -- Tout le monde peut s’inscrire, personne ne peut lire la liste sauf les admins.
-create policy "Formulaire public" on public.leads
+create policy leads_public_insert on public.leads
   for insert to anon, authenticated with check (true);
-create policy "Les admins lisent les inscrits" on public.leads
+create policy leads_admin_select on public.leads
   for select to authenticated
   using (exists (select 1 from public.admins a where a.email = auth.jwt() ->> 'email'));
-create policy "Voir son statut admin" on public.admins
+create policy admins_self_select on public.admins
   for select to authenticated using (email = auth.jwt() ->> 'email');
 
 -- À faire une fois, avec TON adresse e-mail (celle de ta connexion à Créapilot) :
@@ -109,15 +109,15 @@ language sql stable security definer set search_path = public as $$
   select exists (select 1 from public.workspace_members m where m.workspace_id = ws and m.user_id = auth.uid() and m.role = 'owner');
 $$;
 
-drop policy if exists "Membres : lire l'espace" on public.workspaces;
-drop policy if exists "Membres : voir l'équipe" on public.workspace_members;
-drop policy if exists "Membres : voir les invitations" on public.workspace_invites;
+drop policy if exists workspaces_member_select on public.workspaces;
+drop policy if exists members_member_select on public.workspace_members;
+drop policy if exists invites_member_select on public.workspace_invites;
 -- Lecture réservée aux membres ; toutes les écritures passent par les fonctions ci-dessous.
-create policy "Membres : lire l'espace" on public.workspaces
+create policy workspaces_member_select on public.workspaces
   for select to authenticated using (public.is_member(id));
-create policy "Membres : voir l'équipe" on public.workspace_members
+create policy members_member_select on public.workspace_members
   for select to authenticated using (public.is_member(workspace_id));
-create policy "Membres : voir les invitations" on public.workspace_invites
+create policy invites_member_select on public.workspace_invites
   for select to authenticated using (public.is_member(workspace_id));
 
 -- Crée l'espace d'un nouvel utilisateur (il en devient propriétaire)
@@ -196,3 +196,15 @@ begin
     return query select false, w.version, w.data from public.workspaces w where w.id = ws;
   end if;
 end $$;
+
+-- Les fonctions ne sont utilisables que par des utilisateurs connectés.
+revoke execute on function public.is_member(uuid), public.is_owner(uuid),
+  public.create_workspace(text, jsonb), public.accept_invites(),
+  public.invite_member(uuid, text), public.cancel_invite(uuid, text),
+  public.remove_member(uuid, uuid), public.save_workspace(uuid, jsonb, bigint)
+  from public, anon;
+grant execute on function public.is_member(uuid), public.is_owner(uuid),
+  public.create_workspace(text, jsonb), public.accept_invites(),
+  public.invite_member(uuid, text), public.cancel_invite(uuid, text),
+  public.remove_member(uuid, uuid), public.save_workspace(uuid, jsonb, bigint)
+  to authenticated;

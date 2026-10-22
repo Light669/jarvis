@@ -20,6 +20,7 @@ MVP d’un CRM pour les vendeurs **TikTok Shop** : suivre ses créateurs affili�
 - **Bien démarrer** : pour un nouvel espace, une liste de 5 étapes qui se cochent toutes seules (infos, créateurs, stock, premier message, première vente).
 - **Tableau de bord** : ventes et commissions des 30 derniers jours (avec évolution), créateurs qui ont posté, retour sur échantillons, ventes par semaine (graphique ou tableau), liste « À faire aujourd’hui », parcours des créateurs étape par étape et classement des meilleurs créateurs.
 - **Ventes par créateur** : chaque vente est enregistrée avec sa date ; la commission due se calcule toute seule.
+- **Import des ventes TikTok Shop** : dépôt de l’export des commandes affiliées (CSV ou Excel), colonnes reconnues en français ou en anglais et modifiables, aperçu, commandes annulées ou remboursées ignorées, aucune commande comptée deux fois, créateurs inconnus ajoutés si on le souhaite.
 - **Tableau en colonnes** : Trouvés → Contactés → Échantillon envoyé → Vidéo postée → Génère des ventes. On déplace les cartes par glisser-déposer ou avec le bouton « Suivant ».
 - **Relances automatiques** : un créateur trouvé depuis 5 jours, contacté depuis 3 jours sans suite, ou qui a reçu un échantillon depuis 7 jours sans vidéo apparaît dans « À faire aujourd’hui ».
 - **Messages prêts à copier** : invitation, relance, brief vidéo et remerciement, personnalisés avec le pseudo, le produit, la commission, la marque et le prénom.
@@ -48,7 +49,7 @@ Sans configuration, l’application tourne en mode démo (données dans le navig
 
 - Les invitations d’équipe ne sont pas envoyées par e-mail : le propriétaire partage lui-même le lien de l’application.
 - La rédaction par IA demande la version en ligne (Supabase) et une clé d’API Anthropic.
-- Pas de connexion à TikTok Shop : les ventes se saisissent à la main.
+- Pas de connexion directe à TikTok Shop : les ventes s’importent depuis l’export du Seller Center ou se saisissent à la main. L’import n’a pas encore été testé sur un vrai export TikTok Shop.
 
 ## Prochaines étapes
 

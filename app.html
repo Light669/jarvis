@@ -308,6 +308,13 @@ textarea { resize: vertical; }
 .imp-preview { background: var(--surface-2); border-radius: 12px; padding: 12px; font-size: 14px; display: flex; flex-direction: column; gap: 6px; }
 .imp-preview table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .imp-preview th, .imp-preview td { text-align: left; padding: 4px 6px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.map-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.map-row select { padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); width: 100%; }
+.simp-sum { display: flex; flex-wrap: wrap; gap: 8px; }
+.simp-sum span { font-size: 13px; font-weight: 700; padding: 4px 10px; border-radius: 999px; background: var(--surface); }
+.simp-sum .ok { background: var(--good-bg); color: var(--good); }
+.simp-sum .warn { background: var(--warn-bg); color: var(--warn); }
+@media (max-width: 520px) { .map-row { grid-template-columns: 1fr 1fr; } }
 .toast { display: flex; align-items: center; gap: 14px; }
 .toast button { border: none; background: none; color: var(--bg); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; padding: 0; }
 
@@ -501,7 +508,8 @@ textarea { resize: vertical; }
           <h1>Créateurs</h1>
         </div>
         <div class="head-actions">
-          <button class="btn" type="button" id="imp-open">Importer</button>
+          <button class="btn" type="button" id="imp-open">Importer des créateurs</button>
+          <button class="btn" type="button" data-simp>Importer des ventes</button>
           <button class="btn" type="button" id="export-btn">Copier pour Excel</button>
           <button class="btn btn-primary" type="button" data-add>+ Ajouter un créateur</button>
         </div>
@@ -728,6 +736,42 @@ textarea { resize: vertical; }
 </dialog>
 
 <script src="config.js"></script>
+
+<dialog id="simp" aria-labelledby="simp-title">
+  <form class="dlg" id="simp-form" method="dialog">
+    <div class="dlg-head">
+      <h2 id="simp-title">Importer des ventes TikTok Shop</h2>
+      <button class="btn btn-ghost" type="button" id="simp-close" aria-label="Fermer">✕</button>
+    </div>
+    <div class="dlg-body">
+      <p class="hint">Dans le Seller Center TikTok Shop, exporte tes commandes affiliées (fichier CSV ou Excel), puis dépose le fichier ici. Créapilot retrouve chaque créateur par son pseudo et ajoute ses ventes.</p>
+      <div class="drop-zone" id="simp-drop">
+        <span id="simp-file-name">Dépose ton fichier CSV ou Excel ici</span>
+        <label class="btn btn-sm" for="simp-file">Choisir un fichier</label>
+        <input id="simp-file" type="file" accept=".csv,.tsv,.txt,.xlsx,.xls,text/csv" hidden>
+      </div>
+      <details>
+        <summary class="hint" style="cursor:pointer">Ou colle les lignes depuis un tableur</summary>
+        <label class="f" for="simp-text" style="margin-top:8px">Lignes (avec la ligne de titres) <textarea id="simp-text" placeholder="ID de commande	Créateur	Montant	Date
+5770001	@emma.skin	29,90	12/10/2026"></textarea></label>
+      </details>
+      <div id="simp-map-wrap" hidden>
+        <p class="eyebrow" style="margin-bottom:8px">Colonnes reconnues (modifiables)</p>
+        <div class="map-row" id="simp-map"></div>
+      </div>
+      <div class="imp-preview" id="simp-preview" hidden></div>
+      <label class="chk" for="simp-new"><input type="checkbox" id="simp-new" checked> Ajouter les créateurs qui ne sont pas encore dans ma liste</label>
+      <label class="chk" for="simp-stage"><input type="checkbox" id="simp-stage" checked> Passer les créateurs qui ont vendu à l’étape « Génère des ventes »</label>
+    </div>
+    <div class="dlg-foot">
+      <div></div>
+      <div>
+        <button class="btn" type="button" id="simp-cancel">Annuler</button>
+        <button class="btn btn-primary" type="submit" id="simp-go" disabled>Importer</button>
+      </div>
+    </div>
+  </form>
+</dialog>
 
 <div class="toast" id="toast" role="status" hidden><span id="toast-msg"></span><button type="button" id="toast-undo" hidden>Annuler</button></div>
 
@@ -1301,8 +1345,8 @@ textarea { resize: vertical; }
         actions: '<button class="btn btn-sm" type="button" data-ob-go="colis">Ouvrir les colis</button>' },
       { id: 'message', done: logs.some((l) => /^Message envoyé/.test(l.t)), title: 'Envoie ton premier message', hint: 'Ouvre un créateur, onglet Messages, puis « J’ai envoyé ce message ».',
         actions: cs.length ? '<button class="btn btn-sm" type="button" data-ob-msg>Écrire un message</button>' : '' },
-      { id: 'sale', done: cs.some((c) => c.sales.length), title: 'Enregistre une première vente', hint: 'Dans l’onglet Ventes du créateur qui a vendu. Le tableau de bord se remplit tout seul.',
-        actions: cs.length ? '<button class="btn btn-sm" type="button" data-ob-sale>Ajouter une vente</button>' : '' },
+      { id: 'sale', done: cs.some((c) => c.sales.length), title: 'Enregistre une première vente', hint: 'Importe l’export de tes commandes affiliées TikTok Shop, ou ajoute une vente à la main. Le tableau de bord se remplit tout seul.',
+        actions: '<button class="btn btn-sm" type="button" data-simp>Importer depuis TikTok Shop</button>' + (cs.length ? '<button class="btn btn-sm" type="button" data-ob-sale>Ajouter à la main</button>' : '') },
     ];
   }
   function renderOnboarding() {
@@ -1690,6 +1734,186 @@ textarea { resize: vertical; }
     });
     imp.close(); go('createurs');
     commit(`${fresh.length} créateur${fresh.length > 1 ? 's' : ''} importé${fresh.length > 1 ? 's' : ''}`, () => { usingDemo = wasDemo; restore(snap); });
+  });
+
+  /* ---------- Import des ventes TikTok Shop ---------- */
+  const XLSX_JS = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+  const SALE_FIELDS = [
+    ['order', 'N° de commande', /(order|commande).*(id|n°|no|num|ref)|(id|n°|numero|reference).*(order|commande)|^id$|^order$/],
+    ['handle', 'Créateur', /creator|createur|createrice|influen|affili|username|utilisateur|pseudo|handle|compte/],
+    ['amount', 'Montant (€)', /gmv|montant|amount|revenu|revenue|chiffre|total|prix|price|payment|paiement|valeur|value/],
+    ['date', 'Date', /date|time|heure|created|cree/],
+    ['product', 'Produit', /produit|product|article|item|sku/],
+    ['status', 'Statut', /statut|status|etat/],
+  ];
+  const simp = $('#simp');
+  let sRows = [], sHead = [], sMap = {}, sPlan = null;
+  function openSalesImport() {
+    sRows = []; sHead = []; sMap = {}; sPlan = null;
+    $('#simp-text').value = ''; $('#simp-file').value = ''; $('#simp-file-name').textContent = 'Dépose ton fichier CSV ou Excel ici';
+    $('#simp-map-wrap').hidden = true; $('#simp-preview').hidden = true; $('#simp-go').disabled = true; $('#simp-go').textContent = 'Importer';
+    simp.showModal();
+  }
+  document.addEventListener('click', (e) => { if (e.target.closest('[data-simp]')) openSalesImport(); });
+  $('#simp-close').addEventListener('click', () => simp.close());
+  $('#simp-cancel').addEventListener('click', () => simp.close());
+
+  function parseAmount(v) {
+    if (typeof v === 'number') return v;
+    let t = String(v || '').replace(/[^\d,.\-]/g, '');
+    if (!t) return 0;
+    const lc = t.lastIndexOf(','), ld = t.lastIndexOf('.');
+    if (lc > -1 && ld > -1) t = lc > ld ? t.replace(/\./g, '').replace(',', '.') : t.replace(/,/g, '');
+    else if (lc > -1) t = /,\d{3}$/.test(t) && t.split(',').length > 2 ? t.replace(/,/g, '') : t.replace(',', '.');
+    const n = parseFloat(t); return isNaN(n) ? 0 : n;
+  }
+  function parseDate(v) {
+    if (v instanceof Date && !isNaN(v)) return iso(v);
+    const t = String(v || '').trim(); if (!t) return today();
+    let m = t.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);
+    if (m) return `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`;
+    m = t.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{2,4})/);
+    if (m) { // format français jour/mois/année, sauf si le jour est impossible
+      let [d, mo] = [+m[1], +m[2]]; if (mo > 12 && d <= 12) [d, mo] = [mo, d];
+      const y = m[3].length === 2 ? '20' + m[3] : m[3];
+      return `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    }
+    const dt = new Date(t); return isNaN(dt) ? today() : iso(dt);
+  }
+  function guessMap(head) {
+    const map = {}, used = new Set();
+    SALE_FIELDS.forEach(([k, , re]) => {
+      // Le montant de la commission ou un taux ne sont pas le montant de la vente
+      const i = head.findIndex((h, j) => !used.has(j) && re.test(norm(h)) && !(k === 'amount' && /commission|taux|rate|%/.test(norm(h))));
+      if (i > -1) { map[k] = i; used.add(i); }
+    });
+    return map;
+  }
+  function setTable(rows) {
+    rows = rows.filter((r) => r.some((c) => String(c ?? '').trim() !== ''));
+    if (rows.length < 2) { sHead = []; sRows = []; renderSalesPreview(); return; }
+    sHead = rows[0].map((h) => String(h ?? '').trim()); sRows = rows.slice(1);
+    sMap = guessMap(sHead);
+    $('#simp-map').innerHTML = SALE_FIELDS.map(([k, label]) => `<label class="f" for="map-${k}">${label}<select id="map-${k}" data-map="${k}"><option value="">— Aucune —</option>${sHead.map((h, i) => `<option value="${i}" ${sMap[k] === i ? 'selected' : ''}>${esc(h || 'Colonne ' + (i + 1))}</option>`).join('')}</select></label>`).join('');
+    $('#simp-map-wrap').hidden = false;
+    renderSalesPreview();
+  }
+  $('#simp-map').addEventListener('change', (e) => {
+    const sel = e.target.closest('[data-map]'); if (!sel) return;
+    if (sel.value === '') delete sMap[sel.dataset.map]; else sMap[sel.dataset.map] = +sel.value;
+    renderSalesPreview();
+  });
+  function textToRows(text) {
+    const lines = text.split(/\r?\n/).filter((l) => l.trim());
+    if (!lines.length) return [];
+    const f = lines[0], sep = f.includes('\t') ? '\t' : (f.split(';').length > f.split(',').length ? ';' : ',');
+    return lines.map((l) => splitLine(l, sep));
+  }
+  function planSales() {
+    const get = (r, k) => (k in sMap ? r[sMap[k]] : '');
+    const byHandle = new Map(state.creators.map((c) => [c.handle.toLowerCase(), c]));
+    const seen = new Set(state.creators.flatMap((c) => c.sales.map((x) => x.oid).filter(Boolean)));
+    const plan = { add: [], dup: 0, cancelled: 0, invalid: 0, unknown: new Set(), total: 0 };
+    sRows.forEach((r) => {
+      const handle = at(get(r, 'handle')), amount = parseAmount(get(r, 'amount'));
+      if (!handle || handle.length < 2 || !(amount > 0)) { plan.invalid++; return; }
+      if (/annul|cancel|refund|rembours|retour|return|echec|fail/.test(norm(get(r, 'status')))) { plan.cancelled++; return; }
+      const date = parseDate(get(r, 'date'));
+      const oid = String(get(r, 'order') || '').trim() || `${handle.toLowerCase()}|${date}|${amount}|${String(get(r, 'product') || '').trim()}`;
+      if (seen.has(oid)) { plan.dup++; return; }
+      seen.add(oid);
+      if (!byHandle.has(handle.toLowerCase())) plan.unknown.add(handle);
+      plan.add.push({ handle, amount, date, oid, product: String(get(r, 'product') || '').trim() });
+      plan.total += amount;
+    });
+    return plan;
+  }
+  function renderSalesPreview() {
+    const box = $('#simp-preview');
+    if (!sRows.length) {
+      box.hidden = !$('#simp-text').value.trim() && !$('#simp-file').value;
+      box.innerHTML = 'Aucune ligne lisible. Vérifie que le fichier contient une ligne de titres puis une ligne par commande.';
+      $('#simp-go').disabled = true; return;
+    }
+    if (!('handle' in sMap) || !('amount' in sMap)) {
+      box.hidden = false; box.innerHTML = 'Choisis au moins les colonnes <b>Créateur</b> et <b>Montant</b> ci-dessus.';
+      $('#simp-go').disabled = true; return;
+    }
+    sPlan = planSales();
+    const addNew = $('#simp-new').checked;
+    const kept = sPlan.add.filter((x) => addNew || !sPlan.unknown.has(x.handle));
+    const sum = kept.reduce((s, x) => s + x.amount, 0);
+    box.hidden = false;
+    box.innerHTML = `<div class="simp-sum">
+        <span class="ok">${kept.length} vente${kept.length > 1 ? 's' : ''} à importer · ${eur(sum)}</span>
+        ${sPlan.dup ? `<span>${sPlan.dup} déjà importée${sPlan.dup > 1 ? 's' : ''}</span>` : ''}
+        ${sPlan.cancelled ? `<span>${sPlan.cancelled} annulée${sPlan.cancelled > 1 ? 's' : ''} ou remboursée${sPlan.cancelled > 1 ? 's' : ''}, ignorée${sPlan.cancelled > 1 ? 's' : ''}</span>` : ''}
+        ${sPlan.invalid ? `<span class="warn">${sPlan.invalid} ligne${sPlan.invalid > 1 ? 's' : ''} sans créateur ou sans montant</span>` : ''}
+        ${sPlan.unknown.size ? `<span class="warn">${sPlan.unknown.size} créateur${sPlan.unknown.size > 1 ? 's' : ''} pas encore dans ta liste${addNew ? ' : ajouté' + (sPlan.unknown.size > 1 ? 's' : '') : ' : ignoré' + (sPlan.unknown.size > 1 ? 's' : '')}</span>` : ''}
+      </div>
+      ${kept.length ? `<div class="table-wrap"><table><thead><tr><th>Créateur</th><th>Date</th><th>Montant</th><th>Produit</th></tr></thead><tbody>${
+        kept.slice(0, 6).map((x) => `<tr><td>${esc(x.handle)}</td><td>${dShort(x.date)}</td><td>${eur(x.amount)}</td><td>${esc(x.product) || '—'}</td></tr>`).join('')}</tbody></table></div>
+      ${kept.length > 6 ? `<span class="hint">et ${kept.length - 6} autre${kept.length - 6 > 1 ? 's' : ''}</span>` : ''}` : ''}`;
+    $('#simp-go').disabled = !kept.length;
+    $('#simp-go').textContent = kept.length ? `Importer ${kept.length} vente${kept.length > 1 ? 's' : ''}` : 'Importer';
+  }
+  $('#simp-new').addEventListener('change', renderSalesPreview);
+  $('#simp-text').addEventListener('input', () => setTable(textToRows($('#simp-text').value)));
+  function loadXlsx() {
+    return new Promise((res, rej) => {
+      if (window.XLSX) return res();
+      const s = document.createElement('script'); s.src = XLSX_JS; s.onload = () => res(); s.onerror = () => rej(new Error('xlsx'));
+      document.head.appendChild(s);
+    });
+  }
+  async function readSalesFile(file) {
+    if (!file) return;
+    $('#simp-file-name').textContent = file.name;
+    try {
+      if (/\.xlsx?$/i.test(file.name)) {
+        await loadXlsx();
+        const wb = window.XLSX.read(await file.arrayBuffer(), { type: 'array', cellDates: true });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        setTable(window.XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: '' }));
+      } else {
+        setTable(textToRows(await file.text()));
+      }
+    } catch (e) {
+      $('#simp-preview').hidden = false;
+      $('#simp-preview').textContent = 'Impossible de lire ce fichier. Essaie de l’enregistrer au format CSV depuis Excel, puis réessaie.';
+    }
+  }
+  $('#simp-file').addEventListener('change', (e) => readSalesFile(e.target.files[0]));
+  const sdrop = $('#simp-drop');
+  sdrop.addEventListener('dragover', (e) => { e.preventDefault(); sdrop.classList.add('over'); });
+  sdrop.addEventListener('dragleave', () => sdrop.classList.remove('over'));
+  sdrop.addEventListener('drop', (e) => { e.preventDefault(); sdrop.classList.remove('over'); readSalesFile(e.dataTransfer.files[0]); });
+  $('#simp-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (!sPlan) return;
+    const addNew = $('#simp-new').checked, toStage = $('#simp-stage').checked;
+    const snap = snapshot(), wasDemo = usingDemo;
+    const byHandle = new Map(state.creators.map((c) => [c.handle.toLowerCase(), c]));
+    const counts = new Map();
+    sPlan.add.forEach((x) => {
+      let c = byHandle.get(x.handle.toLowerCase());
+      if (!c) {
+        if (!addNew) return;
+        c = { id: uid(), handle: x.handle, cat: 'Autre', followers: 0, commission: 15, product: x.product, cost: 15, stage: 'vend', last: today(), notes: '', sales: [], log: [] };
+        addLog(c, 'Ajouté depuis un import de ventes TikTok Shop');
+        state.creators.push(c); byHandle.set(x.handle.toLowerCase(), c);
+      }
+      c.sales.push({ id: uid(), d: x.date, a: Math.round(x.amount * 100) / 100, oid: x.oid });
+      counts.set(c, (counts.get(c) || 0) + 1);
+    });
+    counts.forEach((n, c) => {
+      addLog(c, `${n} vente${n > 1 ? 's' : ''} importée${n > 1 ? 's' : ''} depuis TikTok Shop`);
+      if (toStage && SI[c.stage] < SI.vend) { c.stage = 'vend'; addLog(c, 'Passé à « Génère des ventes »'); }
+      c.last = today();
+    });
+    const n = [...counts.values()].reduce((s, v) => s + v, 0);
+    usingDemo = false; simp.close();
+    commit(`${n} vente${n > 1 ? 's' : ''} importée${n > 1 ? 's' : ''} pour ${counts.size} créateur${counts.size > 1 ? 's' : ''}`, () => { usingDemo = wasDemo; restore(snap); });
   });
 
   /* ---------- Réglages ---------- */

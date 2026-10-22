@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Marque Créapilot</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+/* Layout : guide de marque en une colonne, sections empilées ; le bandeau d’ouverture montre le logo sur sa couleur. */
+:root {
+  --bg: #F6F4F9;
+  --surface: #FFFFFF;
+  --ink: #22152F;
+  --muted: #675C76;
+  --line: #E3DDEB;
+  --grenadine: #E8264F;
+  --aubergine: #22152F;
+  --menthe: #1BAF7A;
+  --lilas: #F6F4F9;
+  --good-bg: #E0F5EE; --good: #0B7A5F;
+  --warn-bg: #FDEFDF; --warn: #9A4508;
+  --font-display: "Bricolage Grotesque", "Trebuchet MS", sans-serif;
+  --font-body: "Figtree", "Segoe UI", Arial, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #130E1A; --surface: #1B1424; --ink: #F3EEF8; --muted: #ADA2BC; --line: #33283F;
+  --good-bg: #10302A; --good: #4CD3A6; --warn-bg: #36260F; --warn: #F5B460;
+  color-scheme: dark;
+} }
+:root[data-theme="dark"] {
+  --bg: #130E1A; --surface: #1B1424; --ink: #F3EEF8; --muted: #ADA2BC; --line: #33283F;
+  --good-bg: #10302A; --good: #4CD3A6; --warn-bg: #36260F; --warn: #F5B460;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.6 var(--font-body); }
+.band { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.inner { max-width: 1080px; margin: 0 auto; }
+h1, h2, h3 { font-family: var(--font-display); margin: 0; letter-spacing: -0.02em; text-wrap: balance; }
+p { margin: 0; }
+.eyebrow { font-size: 13px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+
+/* Ouverture */
+.hero { background: var(--grenadine); color: #FFFFFF; padding-block: 72px 64px; }
+.hero .inner { display: flex; flex-direction: column; gap: 28px; }
+.lockup { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+.lockup .wm { font: 800 clamp(56px, 10vw, 112px)/0.95 var(--font-display); letter-spacing: -0.045em; }
+.lockup .wm span { color: var(--aubergine); }
+.hero .tagline { font: 600 clamp(22px, 3vw, 32px)/1.25 var(--font-display); max-width: 22ch; }
+.hero .meta { color: #FFE3EA; max-width: 60ch; }
+
+main { padding-block: 56px 80px; }
+main .inner { display: flex; flex-direction: column; gap: 64px; }
+section { display: flex; flex-direction: column; gap: 22px; }
+section > header { display: flex; flex-direction: column; gap: 6px; max-width: 65ch; }
+section h2 { font-size: clamp(28px, 4vw, 40px); }
+section header p { color: var(--muted); }
+
+.grid { display: grid; gap: 16px; }
+.g3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.g4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.g2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.tile { border-radius: 20px; padding: 28px; min-height: 200px; display: flex; flex-direction: column; justify-content: space-between; gap: 18px; border: 1px solid var(--line); min-width: 0; }
+.tile small { font-size: 13px; font-weight: 600; opacity: .8; }
+.t-white { background: #FFFFFF; color: #22152F; }
+.t-aub { background: #22152F; color: #FFFFFF; border-color: #22152F; }
+.t-gre { background: #E8264F; color: #FFFFFF; border-color: #E8264F; }
+.mini-lockup { display: flex; align-items: center; gap: 12px; font: 800 30px/1 var(--font-display); letter-spacing: -0.035em; }
+.mini-lockup .d { color: #E8264F; }
+.mini-lockup .wmk { font-weight: 800; }
+.t-gre .mini-lockup .d { color: #22152F; }
+.t-aub .mini-lockup .d { color: #FF5C7E; }
+
+.facts { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.facts li { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 4px; }
+.facts b { font-family: var(--font-display); font-size: 19px; }
+.facts span { color: var(--muted); font-size: 15px; }
+
+/* Couleurs */
+.swatch { border-radius: 20px; overflow: hidden; border: 1px solid var(--line); background: var(--surface); display: flex; flex-direction: column; min-width: 0; }
+.swatch .chip { height: 128px; display: flex; align-items: end; padding: 14px; font: 700 15px var(--font-body); }
+.swatch .txt { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 2px; }
+.swatch .txt b { font-family: var(--font-display); font-size: 20px; }
+.swatch .txt code { font: 600 14px ui-monospace, "SF Mono", Menlo, monospace; color: var(--muted); }
+.swatch .txt span { font-size: 14px; color: var(--muted); }
+.stages { display: flex; flex-wrap: wrap; gap: 10px; }
+.stage { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); font-weight: 600; font-size: 14px; }
+.stage i { width: 12px; height: 12px; border-radius: 50%; }
+
+/* Typo */
+.spec { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 28px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.spec .big { font-family: var(--font-display); font-weight: 800; font-size: clamp(48px, 8vw, 88px); line-height: 1; letter-spacing: -0.04em; }
+.spec .body-big { font-size: clamp(36px, 6vw, 60px); line-height: 1; font-weight: 600; }
+.spec .label { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; color: var(--muted); font-size: 14px; }
+.scale { display: flex; flex-direction: column; gap: 10px; }
+.scale div { display: flex; align-items: baseline; gap: 16px; border-bottom: 1px solid var(--line); padding-bottom: 10px; }
+.scale code { font: 600 13px ui-monospace, Menlo, monospace; color: var(--muted); width: 120px; flex: none; }
+
+/* Voix */
+.voice { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.voice article { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 22px; display: flex; flex-direction: column; gap: 8px; }
+.voice h3 { font-size: 22px; }
+.voice p { color: var(--muted); }
+.dodont { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.dodont article { border-radius: 20px; padding: 22px; display: flex; flex-direction: column; gap: 12px; }
+.do { background: var(--good-bg); }
+.dont { background: var(--warn-bg); }
+.dodont h3 { font-size: 18px; }
+.do h3 { color: var(--good); }
+.dont h3 { color: var(--warn); }
+.dodont ul { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; }
+
+/* Exemples */
+.ui-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 22px; }
+.btn { border: 1px solid var(--line); background: var(--surface); color: var(--ink); padding: 10px 16px; border-radius: 12px; font: 600 15px var(--font-body); }
+.btn-primary { background: #E8264F; border-color: #E8264F; color: #FFFFFF; }
+.pill { font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; background: var(--warn-bg); color: var(--warn); }
+.kpi { background: #E8264F; color: #FFFFFF; border-radius: 18px; padding: 16px 18px; display: flex; flex-direction: column; gap: 2px; min-width: 200px; }
+.kpi small { opacity: .88; font-size: 13px; font-weight: 600; }
+.kpi b { font: 700 30px/1.15 var(--font-display); }
+.post { background: #22152F; color: #FFFFFF; border-radius: 24px; padding: 32px; display: flex; flex-direction: column; gap: 18px; max-width: 520px; aspect-ratio: 4 / 5; justify-content: space-between; }
+.post h3 { font-size: clamp(30px, 5vw, 44px); line-height: 1.05; }
+.post h3 span { color: #FF5C7E; }
+.post p { color: #CFC4DC; }
+.post .mini-lockup { font-size: 22px; color: #FFFFFF; }
+.post .mini-lockup .d { color: #FF5C7E; }
+.ex { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.copy { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 22px; display: flex; flex-direction: column; gap: 10px; }
+.copy b { font-family: var(--font-display); font-size: 18px; }
+.copy p { color: var(--muted); }
+
+@media (max-width: 860px) { .g3, .g4, .facts, .voice { grid-template-columns: repeat(2, minmax(0, 1fr)); } .ex { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 560px) { .g3, .g4, .g2, .facts, .voice, .dodont { grid-template-columns: minmax(0, 1fr); } .scale code { width: 84px; } }
+</style>
+</head>
+<body>
+<header class="hero band">
+  <div class="inner">
+    <p class="eyebrow" style="color:#FFE3EA">Guide de marque · version 1</p>
+    <div class="lockup">
+      <svg width="104" height="104" viewBox="0 0 64 64" role="img" aria-label="Logo Créapilot"><rect width="64" height="64" rx="18" fill="#22152F"/><path d="M42.6 21.4 A15 15 0 1 0 42.6 42.6" fill="none" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round"/><circle cx="47" cy="32" r="4.5" fill="#FF5C7E"/></svg>
+      <span class="wm">Créapilot<span>.</span></span>
+    </div>
+    <p class="tagline">Pilote tes créateurs, pas ton tableur.</p>
+    <p class="meta">Le CRM des marques qui vendent sur TikTok Shop : trouver des créateurs, leur envoyer des échantillons, suivre les vidéos et payer les bonnes commissions, depuis un seul écran.</p>
+  </div>
+</header>
+
+<main class="band">
+  <div class="inner">
+
+    <section>
+      <header>
+        <p class="eyebrow">Le nom</p>
+        <h2>Créa + pilote</h2>
+        <p>« Créa » pour les créateurs et la créativité, « pilote » pour le contrôle : le vendeur reprend la main sur des dizaines de collaborations. Le nom se dit facilement en français et reste lisible à l’international.</p>
+      </header>
+      <ul class="facts">
+        <li><b>Pour qui</b><span>Les marques et agences qui gèrent 20 créateurs ou plus sur TikTok Shop.</span></li>
+        <li><b>La promesse</b><span>Savoir en un coup d’œil qui a reçu l’échantillon, qui a posté et qui rapporte.</span></li>
+        <li><b>Le ressenti</b><span>Énergique comme TikTok, sérieux comme un outil de gestion.</span></li>
+      </ul>
+    </section>
+
+    <section>
+      <header>
+        <p class="eyebrow">Le logo</p>
+        <h2>Un C qui vise une cible</h2>
+        <p>Le symbole dessine la lettre C, ouverte comme une trajectoire, et un point qui représente le créateur à atteindre. Il fonctionne seul comme icône d’application, ou suivi du nom et de son point final.</p>
+      </header>
+      <div class="grid g3">
+        <div class="tile t-white">
+          <small>Sur fond clair</small>
+          <span class="mini-lockup"><svg width="44" height="44" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="18" fill="#E8264F"/><path d="M42.6 21.4 A15 15 0 1 0 42.6 42.6" fill="none" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round"/><circle cx="47" cy="32" r="4.5" fill="#FFFFFF"/></svg><b class="wmk">Créapilot<span class="d">.</span></b></span>
+        </div>
+        <div class="tile t-aub">
+          <small>Sur fond Aubergine</small>
+          <span class="mini-lockup"><svg width="44" height="44" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="18" fill="#E8264F"/><path d="M42.6 21.4 A15 15 0 1 0 42.6 42.6" fill="none" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round"/><circle cx="47" cy="32" r="4.5" fill="#FFFFFF"/></svg><b class="wmk">Créapilot<span class="d">.</span></b></span>
+        </div>
+        <div class="tile t-gre">
+          <small>Sur fond Grenadine</small>
+          <span class="mini-lockup"><svg width="44" height="44" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="18" fill="#22152F"/><path d="M42.6 21.4 A15 15 0 1 0 42.6 42.6" fill="none" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round"/><circle cx="47" cy="32" r="4.5" fill="#FF5C7E"/></svg><b class="wmk">Créapilot<span class="d">.</span></b></span>
+        </div>
+      </div>
+      <div class="grid g4">
+        <div class="tile t-white" style="min-height:0;align-items:center">
+          <svg width="96" height="96" viewBox="0 0 64 64" role="img" aria-label="Icône d’application"><rect width="64" height="64" rx="18" fill="#E8264F"/><path d="M42.6 21.4 A15 15 0 1 0 42.6 42.6" fill="none" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round"/><circle cx="47" cy="32" r="4.5" fill="#FFFFFF"/></svg>
+          <small>Icône d’application</small>
+        </div>
+        <div class="tile t-white" style="min-height:0;align-items:center">
+          <svg width="40" height="40" viewBox="0 0 64 64" role="img" aria-label="Taille minimale"><rect width="64" height="64" rx="18" fill="#E8264F"/><path d="M42.6 21.4 A15 15 0 1 0 42.6 42.6" fill="none" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round"/><circle cx="47" cy="32" r="4.5" fill="#FFFFFF"/></svg>
+          <small>Taille minimale : 24 px</small>
+        </div>
+        <div class="tile t-white" style="min-height:0;grid-column:span 2">
+          <small>À éviter</small>
+          <p style="color:#675C76">Ne pas changer les couleurs du symbole, ne pas le déformer, ne pas ajouter d’ombre ni de contour, et toujours garder un espace libre autour égal à la taille du point.</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <header>
+        <p class="eyebrow">Les couleurs</p>
+        <h2>Grenadine et Aubergine</h2>
+        <p>La Grenadine attire l’œil sur ce qui compte : le bouton principal, le chiffre du jour. L’Aubergine donne le sérieux d’un outil de gestion. La Menthe est réservée aux ventes et à l’argent gagné.</p>
+      </header>
+      <div class="grid g4">
+        <div class="swatch"><div class="chip" style="background:#E8264F;color:#FFFFFF">Action</div><div class="txt"><b>Grenadine</b><code>#E8264F</code><span>Boutons, chiffre clé, logo</span></div></div>
+        <div class="swatch"><div class="chip" style="background:#22152F;color:#FFFFFF">Texte</div><div class="txt"><b>Aubergine</b><code>#22152F</code><span>Texte, barre latérale</span></div></div>
+        <div class="swatch"><div class="chip" style="background:#1BAF7A;color:#0B2A20">Ventes</div><div class="txt"><b>Menthe</b><code>#1BAF7A</code><span>Ventes, gains, succès</span></div></div>
+        <div class="swatch"><div class="chip" style="background:#F6F4F9;color:#22152F;box-shadow:inset 0 -1px 0 #E3DDEB">Fond</div><div class="txt"><b>Lilas brume</b><code>#F6F4F9</code><span>Fond des écrans</span></div></div>
+      </div>
+      <p class="eyebrow" style="margin-top:6px">Couleurs des étapes (toujours avec leur nom)</p>
+      <div class="stages">
+        <span class="stage"><i style="background:#2A78D6"></i>Trouvés</span>
+        <span class="stage"><i style="background:#EDA100"></i>Contactés</span>
+        <span class="stage"><i style="background:#E8264F"></i>Échantillon envoyé</span>
+        <span class="stage"><i style="background:#6250D6"></i>Vidéo postée</span>
+        <span class="stage"><i style="background:#1BAF7A"></i>Génère des ventes</span>
+      </div>
+    </section>
+
+    <section>
+      <header>
+        <p class="eyebrow">La typographie</p>
+        <h2>Deux polices, deux rôles</h2>
+        <p>Bricolage Grotesque pour les titres et les chiffres : expressive, un peu « fait main », comme une vidéo TikTok. Figtree pour tout le reste : claire et lisible, même en petit.</p>
+      </header>
+      <div class="grid g2">
+        <div class="spec">
+          <div class="label"><span>Titres et chiffres</span><span>Bricolage Grotesque · 600 à 800</span></div>
+          <p class="big">Aa 1 240 €</p>
+          <p style="font-family:var(--font-display);font-size:24px;font-weight:700">Tes créateurs ont généré 1 240 € cette semaine.</p>
+        </div>
+        <div class="spec">
+          <div class="label"><span>Texte de l’interface</span><span>Figtree · 400 à 700</span></div>
+          <p class="body-big">Aa Bb Cc</p>
+          <p>@sarah.cuisine a reçu son échantillon il y a 9 jours. Relance-la avec un message prêt à copier.</p>
+        </div>
+      </div>
+      <div class="scale">
+        <div><code>Titre de page</code><span style="font:700 36px/1.1 var(--font-display)">Créateurs</span></div>
+        <div><code>Chiffre clé</code><span style="font:700 30px/1.1 var(--font-display)">× 9,4</span></div>
+        <div><code>Titre de bloc</code><span style="font:700 19px/1.3 var(--font-display)">Meilleurs créateurs</span></div>
+        <div><code>Texte</code><span style="font-size:15px">Glisse une carte vers une autre colonne.</span></div>
+        <div><code>Légende</code><span style="font-size:13px;color:var(--muted)">il y a 3 j</span></div>
+      </div>
+    </section>
+
+    <section>
+      <header>
+        <p class="eyebrow">La voix</p>
+        <h2>On parle comme une collègue qui connaît TikTok</h2>
+        <p>Les vendeurs sont débordés. Chaque phrase doit leur faire gagner du temps.</p>
+      </header>
+      <div class="voice">
+        <article><h3>Direct</h3><p>On tutoie, on va à l’essentiel. Une idée par phrase.</p></article>
+        <article><h3>Concret</h3><p>Des chiffres et des noms plutôt que des promesses : « 3 créateurs à relancer », pas « optimisez votre engagement ».</p></article>
+        <article><h3>Encourageant</h3><p>On célèbre les ventes et on rassure quand le tableau est vide.</p></article>
+      </div>
+      <div class="dodont">
+        <article class="do">
+          <h3>À dire</h3>
+          <ul>
+            <li>« @sarah.cuisine attend une relance depuis 9 jours. »</li>
+            <li>« Tes créateurs ont généré 1 240 € ce mois-ci. »</li>
+            <li>« Copie le message, colle-le dans TikTok. »</li>
+          </ul>
+        </article>
+        <article class="dont">
+          <h3>À éviter</h3>
+          <ul>
+            <li>« Maximisez votre ROI influenceur grâce à l’IA. »</li>
+            <li>« Une erreur est survenue. »</li>
+            <li>Le jargon anglais quand un mot français existe.</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section>
+      <header>
+        <p class="eyebrow">En situation</p>
+        <h2>Interface et réseaux sociaux</h2>
+        <p>Les mêmes couleurs, polices et mots partout : dans l’application, sur la page de vente et dans les publications.</p>
+      </header>
+      <div class="ui-row">
+        <button class="btn btn-primary" type="button">+ Ajouter un créateur</button>
+        <button class="btn" type="button">Copier le message</button>
+        <span class="pill">À relancer</span>
+        <div class="kpi"><small>Ventes générées · 30 jours</small><b>2 470 €</b></div>
+      </div>
+      <div class="ex">
+        <div class="post" role="img" aria-label="Exemple de publication">
+          <span class="mini-lockup"><svg width="34" height="34" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="18" fill="#E8264F"/><path d="M42.6 21.4 A15 15 0 1 0 42.6 42.6" fill="none" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round"/><circle cx="47" cy="32" r="4.5" fill="#FFFFFF"/></svg><b class="wmk">Créapilot<span class="d">.</span></b></span>
+          <h3>50 créateurs.<br>1 seul écran.<br><span>Zéro tableur.</span></h3>
+          <p>Le CRM des marques TikTok Shop. 10 places en test gratuit pour les marques françaises.</p>
+        </div>
+        <div class="copy">
+          <b>Texte d’accompagnement (LinkedIn ou TikTok)</b>
+          <p>Tu gères tes créateurs TikTok Shop dans un fichier Excel et des dizaines de messages privés ? J’ai construit Créapilot : un tableau qui montre qui a reçu l’échantillon, qui a posté et qui rapporte vraiment, avec les relances prêtes à copier.</p>
+          <p>Je cherche 10 marques françaises pour le tester gratuitement et me dire ce qui manque. Écris-moi « TEST » en commentaire.</p>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</main>
+</body>
+</html>

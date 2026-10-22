@@ -4,8 +4,12 @@ MVP d’un CRM pour les vendeurs **TikTok Shop** : suivre ses créateurs affili�
 
 > « Créapilot » est un nom provisoire.
 
+*Pilote tes créateurs, pas ton tableur.* Le guide de marque (logo, couleurs, typographie, ton) est dans `brand.html`.
+
 ## Ce que fait le MVP
 
+- **Tableau de bord** : ventes et commissions des 30 derniers jours (avec évolution), créateurs qui ont posté, retour sur échantillons, ventes par semaine (graphique ou tableau), liste « À faire aujourd’hui », parcours des créateurs étape par étape et classement des meilleurs créateurs.
+- **Ventes par créateur** : chaque vente est enregistrée avec sa date ; la commission due se calcule toute seule.
 - **Tableau en colonnes** : Trouvés → Contactés → Échantillon envoyé → Vidéo postée → Génère des ventes. On déplace les cartes par glisser-déposer ou avec le bouton « Suivant ».
 - **Relances automatiques** : un créateur trouvé depuis 5 jours, contacté depuis 3 jours sans suite, ou qui a reçu un échantillon depuis 7 jours sans vidéo apparaît dans « À faire aujourd’hui ».
 - **Messages prêts à copier** : invitation, relance, brief vidéo et remerciement, personnalisés avec le pseudo, le produit, la commission, la marque et le prénom.

@@ -796,8 +796,9 @@ textarea { resize: vertical; }
   const alertFor = (c) => {
     const s = c.ship || {};
     if (s.address && SI[c.stage] <= 2) {
-      if (s.deliveredAt) return daysSince(s.deliveredAt) >= 7 ? 'Vidéo en retard' : null;
-      if (s.sentAt) return daysSince(s.sentAt) >= 6 ? 'Colis à vérifier' : null;
+      // Une relance après la livraison (« Fait », message envoyé) repousse l'alerte de quelques jours
+      if (s.deliveredAt) { const relanced = c.last > s.deliveredAt; return daysSince(relanced ? c.last : s.deliveredAt) >= (relanced ? 4 : 7) ? 'Vidéo en retard' : null; }
+      if (s.sentAt) return daysSince(c.last > s.sentAt ? c.last : s.sentAt) >= 6 ? 'Colis à vérifier' : null;
       return daysSince(c.last) >= 2 ? 'Colis à envoyer' : null;
     }
     const r = RULES[c.stage]; return r && daysSince(c.last) >= r[0] ? r[1] : null;

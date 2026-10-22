@@ -267,6 +267,23 @@ textarea { resize: vertical; }
 .stock-row input { width: 76px; padding: 7px 9px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); text-align: right; font-variant-numeric: tabular-nums; }
 .ship-tag { font-size: 12px; font-weight: 600; color: var(--muted); }
 
+/* Bien démarrer */
+.onboard { border: 2px solid var(--accent); gap: 14px; }
+.onboard-progress { height: 8px; background: var(--surface-2); border-radius: 4px; overflow: hidden; }
+.onboard-progress span { display: block; height: 100%; background: var(--accent); border-radius: 4px; transition: width .4s ease; }
+.ob-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.ob-steps li { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 14px; background: var(--surface-2); flex-wrap: wrap; }
+.ob-check { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--line); display: grid; place-items: center; flex: none; font-size: 14px; font-weight: 800; color: var(--muted); background: var(--surface); }
+.ob-steps li.done .ob-check { background: var(--good); border-color: var(--good); color: var(--surface); }
+.ob-steps li.done .ob-text b { text-decoration: line-through; color: var(--muted); }
+.ob-text { flex: 1; min-width: 200px; display: flex; flex-direction: column; }
+.ob-text small { color: var(--muted); }
+.ob-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.ob-actions input { padding: 7px 10px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); width: 150px; }
+.board-empty { background: var(--surface); border: 1px dashed var(--line); border-radius: 18px; padding: 26px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; }
+.board-empty b { font-family: var(--font-display); font-size: 20px; display: block; }
+.board-empty p { color: var(--muted); }
+
 /* Filtres, import, historique */
 .filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .filters select { padding: 9px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); max-width: 220px; }
@@ -354,6 +371,15 @@ textarea { resize: vertical; }
         </div>
       </header>
 
+      <article class="panel onboard" id="onboard" hidden aria-labelledby="ob-title">
+        <div class="panel-head">
+          <div><h2 id="ob-title">Bien démarrer avec Créapilot</h2><p id="ob-sub">5 étapes pour suivre tes créateurs dès aujourd’hui</p></div>
+          <button class="btn btn-ghost btn-sm" type="button" id="ob-hide">Masquer</button>
+        </div>
+        <div class="onboard-progress" aria-hidden="true"><span id="ob-bar"></span></div>
+        <ol class="ob-steps" id="ob-steps"></ol>
+      </article>
+
       <div class="kpis">
         <article class="kpi feature">
           <span class="kpi-label">Ventes générées · 30 jours</span>
@@ -435,6 +461,13 @@ textarea { resize: vertical; }
           <label class="chk" for="flt-alert"><input type="checkbox" id="flt-alert"> À relancer seulement</label>
         </div>
         <span class="hint">Glisse une carte vers une autre colonne, ou clique sur « Suivant ».</span>
+      </div>
+      <div class="board-empty" id="board-empty" hidden>
+        <div><b>Aucun créateur pour l’instant</b><p>Importe ta liste depuis Excel ou Google Sheets, ou ajoute ton premier créateur à la main.</p></div>
+        <div class="head-actions">
+          <button class="btn" type="button" data-imp>Importer ma liste</button>
+          <button class="btn btn-primary" type="button" data-add>+ Ajouter un créateur</button>
+        </div>
       </div>
       <div class="board-scroll"><div class="board" id="board"></div></div>
     </section>
@@ -841,7 +874,7 @@ textarea { resize: vertical; }
 
     const cur = salesBetween(30, 0), prev = salesBetween(60, 30);
     $('#k-sales').textContent = eur(cur);
-    $('#k-sales-sub').innerHTML = deltaHtml(cur, prev) + ' par rapport aux 30 jours d’avant';
+    $('#k-sales-sub').innerHTML = cur || prev ? deltaHtml(cur, prev) + ' par rapport aux 30 jours d’avant' : 'Aucune vente enregistrée sur 30 jours';
     $('#k-comm').textContent = eur(salesBetween(30, 0, (c, x) => comm(c, +x.a)));
     const paying = state.creators.filter((c) => c.sales.some((x) => daysSince(x.d) < 30)).length;
     $('#k-comm-sub').textContent = `${paying} créateur${paying > 1 ? 's' : ''} à rémunérer`;
@@ -861,7 +894,7 @@ textarea { resize: vertical; }
     spark($('#spark-comm'), weeks((c, x) => comm(c, +x.a)).map((x) => x.v), 'var(--s4)');
     weeklyChart(w);
     weeklyTable(w, weeks((c, x) => comm(c, +x.a)));
-    renderTodo(); renderFunnel(); renderRank();
+    renderTodo(); renderFunnel(); renderRank(); renderOnboarding();
   }
   function deltaHtml(cur, prev) {
     if (!prev) return cur ? '<span class="delta up">nouveau</span>' : '<span class="delta">—</span>';
@@ -968,6 +1001,7 @@ textarea { resize: vertical; }
   function renderBoard() {
     fillSelect($('#flt-cat'), 'Toutes les catégories', [...new Set(state.creators.map((c) => c.cat))].sort());
     fillSelect($('#flt-prod'), 'Tous les produits', [...new Set(state.creators.map((c) => c.product).filter(Boolean))].sort());
+    $('#board-empty').hidden = state.creators.length > 0;
     const q = $('#search').value.trim().toLowerCase(), cat = $('#flt-cat').value, prod = $('#flt-prod').value, onlyAlerts = $('#flt-alert').checked;
     const list = state.creators.filter((c) => (!q || [c.handle, c.product, c.cat, c.notes].join(' ').toLowerCase().includes(q))
       && (!cat || c.cat === cat) && (!prod || c.product === prod) && (!onlyAlerts || alertFor(c)));
@@ -1027,7 +1061,57 @@ textarea { resize: vertical; }
     const i = e.target.closest('[data-stock]'); if (!i) return;
     const v = i.value === '' ? undefined : Math.max(0, Math.round(+i.value));
     if (v === undefined) delete state.stock[i.dataset.stock]; else state.stock[i.dataset.stock] = v;
-    save(); renderShip();
+    save(); renderShip(); renderOnboarding();
+  });
+
+  /* ---------- Bien démarrer ---------- */
+  function onboardingSteps() {
+    const cs = state.creators, logs = cs.flatMap((c) => c.log || []);
+    return [
+      { id: 'infos', done: !!(state.brand && state.name), title: 'Renseigne ta marque et ton prénom', hint: 'Ils servent à signer tes messages aux créateurs.',
+        actions: `<input id="ob-brand" placeholder="Ta marque" value="${esc(state.brand || '')}" aria-label="Ta marque"><input id="ob-name" placeholder="Ton prénom" value="${esc(state.name || '')}" aria-label="Ton prénom">` },
+      { id: 'creators', done: cs.length >= 3, title: 'Ajoute tes créateurs', hint: cs.length ? `${cs.length} pour l’instant : ajoute-en au moins 3.` : 'Importe ta liste depuis Excel en 2 minutes.',
+        actions: '<button class="btn btn-sm" type="button" data-imp>Importer</button><button class="btn btn-sm" type="button" data-add>Ajouter</button>' },
+      { id: 'stock', done: Object.keys(state.stock || {}).length > 0, title: 'Indique ton stock d’échantillons', hint: 'Il baissera tout seul à chaque colis envoyé.',
+        actions: '<button class="btn btn-sm" type="button" data-ob-go="colis">Ouvrir les colis</button>' },
+      { id: 'message', done: logs.some((l) => /^Message envoyé/.test(l.t)), title: 'Envoie ton premier message', hint: 'Ouvre un créateur, onglet Messages, puis « J’ai envoyé ce message ».',
+        actions: cs.length ? '<button class="btn btn-sm" type="button" data-ob-msg>Écrire un message</button>' : '' },
+      { id: 'sale', done: cs.some((c) => c.sales.length), title: 'Enregistre une première vente', hint: 'Dans l’onglet Ventes du créateur qui a vendu. Le tableau de bord se remplit tout seul.',
+        actions: cs.length ? '<button class="btn btn-sm" type="button" data-ob-sale>Ajouter une vente</button>' : '' },
+    ];
+  }
+  function renderOnboarding() {
+    const steps = onboardingSteps(), n = steps.filter((x) => x.done).length;
+    const box = $('#onboard');
+    box.hidden = usingDemo || state.onboardingHidden || n === steps.length;
+    if (box.hidden) return;
+    $('#ob-sub').textContent = `${n} sur ${steps.length} étapes terminées`;
+    $('#ob-bar').style.width = `${n / steps.length * 100}%`;
+    const keep = document.activeElement && ['ob-brand', 'ob-name'].includes(document.activeElement.id) ? document.activeElement.id : null;
+    $('#ob-steps').innerHTML = steps.map((x, i) => `<li class="${x.done ? 'done' : ''}">
+        <span class="ob-check" aria-hidden="true">${x.done ? '✓' : i + 1}</span>
+        <span class="ob-text"><b>${x.title}</b><small>${x.done ? 'Terminé' : x.hint}</small></span>
+        ${x.done && x.id !== 'infos' ? '' : `<span class="ob-actions">${x.actions}</span>`}
+      </li>`).join('');
+    if (keep) { const el = $('#' + keep); el.focus(); el.setSelectionRange(el.value.length, el.value.length); }
+  }
+  $('#onboard').addEventListener('input', (e) => {
+    if (e.target.id === 'ob-brand') { state.brand = e.target.value; $('#s-brand').value = state.brand; }
+    else if (e.target.id === 'ob-name') { state.name = e.target.value; $('#s-name').value = state.name; }
+    else return;
+    save(); clearTimeout(obTimer); obTimer = setTimeout(renderDashboard, 600);
+  });
+  let obTimer;
+  $('#onboard').addEventListener('click', (e) => {
+    const g = e.target.closest('[data-ob-go]'); if (g) { go(g.dataset.obGo); return; }
+    const pick = (pref) => state.creators.find((c) => pref.includes(c.stage)) || state.creators[0];
+    if (e.target.closest('[data-ob-msg]')) { const c = pick(['trouve', 'contacte']); openDialog(c.id, 'msg', c.stage === 'trouve' ? 'invite' : 'relance'); return; }
+    if (e.target.closest('[data-ob-sale]')) { const c = pick(['vend', 'video']); openDialog(c.id, 'sales'); }
+  });
+  $('#ob-hide').addEventListener('click', () => { state.onboardingHidden = true; commit('Guide masqué'); });
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('[data-imp]')) openImport();
+    else if (e.target.closest('#onboard [data-add]')) openDialog(null);
   });
 
   function render() {
@@ -1384,12 +1468,13 @@ textarea { resize: vertical; }
   /* ---------- Réglages ---------- */
   $('#s-brand').addEventListener('input', (e) => { state.brand = e.target.value; save(); });
   $('#s-name').addEventListener('input', (e) => { state.name = e.target.value; save(); renderDashboard(); });
+  $('#s-brand').addEventListener('change', renderDashboard);
   ['#search', '#flt-cat', '#flt-prod', '#flt-alert'].forEach((s) => $(s).addEventListener(s === '#search' ? 'input' : 'change', renderBoard));
   let clearArmed = false;
   $('#clear-all').addEventListener('click', () => {
     if (!clearArmed) { clearArmed = true; $('#clear-all').textContent = 'Confirmer : tout effacer'; return; }
     clearArmed = false; $('#clear-all').textContent = 'Tout effacer';
-    state.creators = []; usingDemo = false; commit('Tableau vidé : ajoute ton premier créateur');
+    state.creators = []; state.stock = {}; state.onboardingHidden = false; usingDemo = false; commit('Tableau vidé : ajoute ton premier créateur');
   });
   $('#reset-demo').addEventListener('click', () => { state.creators = demo(); state.stock = demoStock(); usingDemo = true; commit('Exemples rechargés'); });
   $('#show-chart').addEventListener('click', () => { $('#weekly').hidden = false; $('#weekly-table').hidden = true; $('#show-chart').setAttribute('aria-pressed', 'true'); $('#show-table').setAttribute('aria-pressed', 'false'); weeklyChart(weeks()); });

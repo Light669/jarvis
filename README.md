@@ -16,6 +16,7 @@ MVP d’un CRM pour les vendeurs **TikTok Shop** : suivre ses créateurs affili�
 
 ## Ce que fait le MVP
 
+- **Bien démarrer** : pour un nouvel espace, une liste de 5 étapes qui se cochent toutes seules (infos, créateurs, stock, premier message, première vente).
 - **Tableau de bord** : ventes et commissions des 30 derniers jours (avec évolution), créateurs qui ont posté, retour sur échantillons, ventes par semaine (graphique ou tableau), liste « À faire aujourd’hui », parcours des créateurs étape par étape et classement des meilleurs créateurs.
 - **Ventes par créateur** : chaque vente est enregistrée avec sa date ; la commission due se calcule toute seule.
 - **Tableau en colonnes** : Trouvés → Contactés → Échantillon envoyé → Vidéo postée → Génère des ventes. On déplace les cartes par glisser-déposer ou avec le bouton « Suivant ».

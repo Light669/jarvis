@@ -4,16 +4,15 @@
 >
 > Déjà fait :
 > - projet créé dans l’organisation gratuite ;
-> - tables, règles de sécurité et fonctions `is_member` / `is_owner` installées ;
+> - tables, règles de sécurité et toutes les fonctions (équipe, sauvegarde) installées ;
 > - fonction d’IA `generate-message` déployée ;
 > - ton adresse e-mail déclarée administrateur (onglet « Inscrits ») ;
 > - `config.js` rempli avec l’adresse du projet et la clé « anon public ».
 >
 > Il reste à faire :
-> 1. **SQL Editor** : coller tout `supabase/schema.sql`, puis **Run** (et confirmer si Supabase le demande). Cela installe les fonctions de l’équipe et de sauvegarde.
-> 2. **GitHub Pages** : mettre le site en ligne (étape 3 ci-dessous).
-> 3. **Authentication → URL Configuration** : renseigner l’adresse de l’application (étape 4).
-> 4. Facultatif, pour l’IA : ajouter le secret `ANTHROPIC_API_KEY` (étape 6).
+> 1. **GitHub Pages** : mettre le site en ligne (étape 3 ci-dessous).
+> 2. **Authentication → URL Configuration** : renseigner l’adresse de l’application (étape 4).
+> 3. Facultatif, pour l’IA : ajouter le secret `ANTHROPIC_API_KEY` (étape 6).
 
 Sans configuration, Créapilot fonctionne en **mode démo** : les données restent dans le navigateur.
 Avec Supabase, chaque client se connecte par e-mail (lien magique, sans mot de passe) et ses données sont sauvegardées en ligne. Le formulaire de la page de vente enregistre aussi les inscriptions.

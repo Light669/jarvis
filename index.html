@@ -1,0 +1,526 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Créapilot</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..800&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: outil de travail. Bandeau chiffres → alertes → tableau en colonnes (une colonne par étape du créateur). */
+:root {
+  --bg: #F6F5F8;
+  --surface: #FFFFFF;
+  --surface-2: #EFEDF3;
+  --ink: #1F1B2D;
+  --muted: #625C73;
+  --line: #E2DFE8;
+  --accent: #C81D55;
+  --accent-ink: #FFFFFF;
+  --accent-soft: #FBE5EC;
+  --ok: #0A7D78;
+  --ok-bg: #E1F4F2;
+  --warn: #A3480A;
+  --warn-bg: #FDEEDC;
+  --s1: #8C86A0; --s2: #6D5BD0; --s3: #C77A12; --s4: #C81D55; --s5: #0A7D78;
+  --shadow: 0 1px 2px rgba(31,27,45,.06), 0 4px 14px rgba(31,27,45,.06);
+  --font-display: "Bricolage Grotesque", "Trebuchet MS", sans-serif;
+  --font-body: "Figtree", "Segoe UI", Arial, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #14121B; --surface: #1D1A27; --surface-2: #262232; --ink: #F1EFF6; --muted: #A9A3B8; --line: #332E43;
+  --accent: #FF5A8C; --accent-ink: #22060F; --accent-soft: #3A1A27;
+  --ok: #45D2CA; --ok-bg: #123230; --warn: #F5B460; --warn-bg: #3A2A14;
+  --s1: #A29CB6; --s2: #9D8CF5; --s3: #EAA444; --s4: #FF5A8C; --s5: #45D2CA;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 4px 14px rgba(0,0,0,.25);
+  color-scheme: dark;
+} }
+:root[data-theme="dark"] {
+  --bg: #14121B; --surface: #1D1A27; --surface-2: #262232; --ink: #F1EFF6; --muted: #A9A3B8; --line: #332E43;
+  --accent: #FF5A8C; --accent-ink: #22060F; --accent-soft: #3A1A27;
+  --ok: #45D2CA; --ok-bg: #123230; --warn: #F5B460; --warn-bg: #3A2A14;
+  --s1: #A29CB6; --s2: #9D8CF5; --s3: #EAA444; --s4: #FF5A8C; --s5: #45D2CA;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 4px 14px rgba(0,0,0,.25);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font: 15px/1.5 var(--font-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 40px;
+}
+.wrap { max-width: 1440px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; letter-spacing: -0.01em; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.num { font-variant-numeric: tabular-nums; }
+
+/* En-tête */
+.top { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; justify-content: space-between; }
+.brand { display: flex; align-items: center; gap: 12px; }
+.logo { width: 40px; height: 40px; border-radius: 12px; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; font: 800 20px var(--font-display); }
+.brand h1 { font-size: 26px; }
+.brand p { margin: 0; color: var(--muted); font-size: 13px; }
+.top-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.field-inline { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
+.field-inline input { width: 130px; padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.btn { border: 1px solid var(--line); background: var(--surface); padding: 9px 14px; border-radius: 10px; font-weight: 600; }
+.btn:hover { border-color: var(--muted); }
+.btn-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn-primary:hover { filter: brightness(1.06); border-color: var(--accent); }
+.btn-ghost { background: transparent; border-color: transparent; color: var(--muted); }
+.btn-danger { color: var(--accent); }
+
+/* Chiffres */
+.stats { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; display: flex; flex-direction: column; gap: 2px; }
+.stat span { color: var(--muted); font-size: 13px; }
+.stat strong { font: 700 28px/1.2 var(--font-display); font-variant-numeric: tabular-nums; }
+.stat.hot strong { color: var(--accent); }
+
+/* Alertes */
+.alerts { background: var(--warn-bg); border-radius: 14px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+.alerts h2 { font-size: 17px; color: var(--warn); }
+.alert-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.alert-chip { border: 1px solid transparent; background: var(--surface); border-radius: 999px; padding: 6px 12px; font-size: 14px; display: flex; gap: 6px; align-items: center; }
+.alert-chip b { font-weight: 700; }
+.alert-chip em { font-style: normal; color: var(--warn); font-weight: 600; }
+.alerts.empty { background: var(--ok-bg); }
+.alerts.empty h2 { color: var(--ok); }
+
+/* Barre d'outils */
+.toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+.toolbar input, .toolbar select { padding: 8px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+.toolbar input { width: min(320px, 100%); }
+.hint { color: var(--muted); font-size: 13px; }
+
+/* Tableau */
+.board-scroll { overflow-x: auto; padding-bottom: 6px; }
+.board { display: grid; grid-template-columns: repeat(5, minmax(240px, 1fr)); gap: 12px; min-width: 1240px; }
+.col { background: var(--surface-2); border-radius: 16px; padding: 12px; display: flex; flex-direction: column; gap: 10px; min-height: 320px; transition: outline-color .15s; outline: 2px dashed transparent; outline-offset: -2px; }
+.col.drop { outline-color: var(--accent); }
+.col-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 2px 4px 4px; }
+.col-head h3 { font-size: 15px; display: flex; align-items: center; gap: 8px; }
+.dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+.count { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.col-empty { color: var(--muted); font-size: 13px; text-align: center; padding: 18px 8px; border: 1px dashed var(--line); border-radius: 12px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px; box-shadow: var(--shadow); cursor: grab; text-align: left; width: 100%; }
+.card:hover { border-color: var(--muted); }
+.card.dragging { opacity: .45; }
+.card-top { display: flex; align-items: center; gap: 10px; }
+.avatar { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 14px; color: #fff; flex: none; }
+.card-id { min-width: 0; flex: 1; }
+.card-id b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.card-id small { color: var(--muted); }
+.money { font-size: 14px; display: flex; justify-content: space-between; gap: 8px; }
+.money .sales { color: var(--ok); font-weight: 700; }
+.card-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; color: var(--muted); }
+.pill { white-space: nowrap; font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 999px; background: var(--warn-bg); color: var(--warn); }
+.next { white-space: nowrap; border: 1px solid var(--line); background: transparent; border-radius: 8px; padding: 3px 8px; font-size: 12px; font-weight: 600; color: var(--muted); }
+.next:hover { color: var(--ink); border-color: var(--muted); }
+
+/* Fenêtre */
+dialog { border: none; border-radius: 18px; padding: 0; width: min(640px, calc(100vw - 32px)); background: var(--surface); color: var(--ink); box-shadow: 0 20px 60px rgba(0,0,0,.3); }
+dialog::backdrop { background: rgba(20,18,27,.45); }
+.dlg { display: flex; flex-direction: column; max-height: min(86vh, 860px); }
+.dlg-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 20px 0; }
+.dlg-head h2 { font-size: 22px; }
+.tabs { display: flex; gap: 4px; padding: 12px 20px 0; border-bottom: 1px solid var(--line); }
+.tab { border: none; background: none; padding: 8px 12px; font-weight: 600; color: var(--muted); border-bottom: 2px solid transparent; }
+.tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+.dlg-body { padding: 18px 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+label.f { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 600; color: var(--muted); min-width: 0; }
+label.f input, label.f select, label.f textarea { padding: 9px 11px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); font-weight: 400; color: var(--ink); width: 100%; }
+textarea { resize: vertical; }
+.dlg-foot { display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; padding: 14px 20px 18px; border-top: 1px solid var(--line); }
+.dlg-foot div { display: flex; gap: 8px; flex-wrap: wrap; }
+.tpl-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.tpl-row .btn[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+#msg-out { min-height: 220px; line-height: 1.55; }
+.calc { background: var(--surface-2); border-radius: 10px; padding: 10px 12px; font-size: 14px; }
+
+footer { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; color: var(--muted); font-size: 13px; }
+footer div { display: flex; gap: 8px; flex-wrap: wrap; }
+.toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 10px; font-weight: 600; font-size: 14px; }
+
+@media (max-width: 900px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } .stat:last-child { grid-column: span 2; } }
+@media (max-width: 520px) { .grid2 { grid-template-columns: 1fr; } .field-inline input { width: 110px; } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <div class="logo" aria-hidden="true">C</div>
+      <div>
+        <h1>Créapilot</h1>
+        <p>Le suivi de tes créateurs affiliés TikTok Shop</p>
+      </div>
+    </div>
+    <div class="top-actions">
+      <label class="field-inline" for="s-brand">Marque <input id="s-brand" placeholder="Ta marque"></label>
+      <label class="field-inline" for="s-name">Prénom <input id="s-name" placeholder="Ton prénom"></label>
+      <button class="btn btn-primary" id="add-btn" type="button">+ Ajouter un créateur</button>
+    </div>
+  </header>
+
+  <section class="stats" aria-label="Résumé">
+    <div class="stat"><span>Créateurs suivis</span><strong id="st-total" class="num">0</strong></div>
+    <div class="stat"><span>Échantillons sans vidéo</span><strong id="st-samples" class="num">0</strong></div>
+    <div class="stat hot"><span>À relancer</span><strong id="st-alerts" class="num">0</strong></div>
+    <div class="stat"><span>Ventes générées</span><strong id="st-sales" class="num">0 €</strong></div>
+    <div class="stat"><span>Commissions à verser</span><strong id="st-comm" class="num">0 €</strong></div>
+  </section>
+
+  <section class="alerts" id="alerts" aria-live="polite">
+    <h2 id="alerts-title">À faire aujourd’hui</h2>
+    <div class="alert-list" id="alert-list"></div>
+  </section>
+
+  <div class="toolbar">
+    <input id="search" type="search" placeholder="Rechercher un créateur, un produit…" aria-label="Rechercher">
+    <span class="hint">Glisse une carte d’une colonne à l’autre, ou utilise le bouton « Suivant ».</span>
+  </div>
+
+  <div class="board-scroll">
+    <div class="board" id="board"></div>
+  </div>
+
+  <footer>
+    <span id="data-note">Données d’exemple. Tout est enregistré seulement dans ce navigateur.</span>
+    <div>
+      <button class="btn btn-ghost" id="reset-demo" type="button">Recharger les exemples</button>
+      <button class="btn btn-ghost btn-danger" id="clear-all" type="button">Tout effacer</button>
+    </div>
+  </footer>
+</div>
+
+<dialog id="dlg" aria-labelledby="dlg-title">
+  <form class="dlg" id="form" method="dialog">
+    <div class="dlg-head">
+      <h2 id="dlg-title">Nouveau créateur</h2>
+      <button class="btn btn-ghost" type="button" id="dlg-close" aria-label="Fermer">✕</button>
+    </div>
+    <div class="tabs" role="tablist">
+      <button class="tab" type="button" role="tab" id="tab-info" aria-selected="true">Fiche</button>
+      <button class="tab" type="button" role="tab" id="tab-msg" aria-selected="false">Messages</button>
+    </div>
+    <div class="dlg-body" id="pane-info">
+      <div class="grid2">
+        <label class="f" for="f-handle">Pseudo TikTok <input id="f-handle" required placeholder="@pseudo"></label>
+        <label class="f" for="f-cat">Catégorie <select id="f-cat"></select></label>
+        <label class="f" for="f-followers">Abonnés <input id="f-followers" type="number" min="0" step="100" placeholder="12000"></label>
+        <label class="f" for="f-commission">Commission (%) <input id="f-commission" type="number" min="0" max="80" step="1" value="15"></label>
+        <label class="f" for="f-product">Produit proposé <input id="f-product" placeholder="Sérum vitamine C"></label>
+        <label class="f" for="f-stage">Étape <select id="f-stage"></select></label>
+        <label class="f" for="f-sales">Ventes générées (€) <input id="f-sales" type="number" min="0" step="1" value="0"></label>
+        <label class="f" for="f-last">Dernière action <input id="f-last" type="date"></label>
+      </div>
+      <div class="calc num" id="f-calc"></div>
+      <label class="f" for="f-notes">Notes <textarea id="f-notes" rows="3" placeholder="Adresse d’envoi, préférences, date de publication prévue…"></textarea></label>
+    </div>
+    <div class="dlg-body" id="pane-msg" hidden>
+      <div class="tpl-row" role="group" aria-label="Type de message">
+        <button class="btn" type="button" data-tpl="invite" aria-pressed="true">Invitation</button>
+        <button class="btn" type="button" data-tpl="relance" aria-pressed="false">Relance</button>
+        <button class="btn" type="button" data-tpl="brief" aria-pressed="false">Brief vidéo</button>
+        <button class="btn" type="button" data-tpl="merci" aria-pressed="false">Remerciement</button>
+      </div>
+      <label class="f" for="msg-out">Message prêt à envoyer (modifiable) <textarea id="msg-out"></textarea></label>
+      <span class="hint">Le message utilise le pseudo, le produit, la commission, ta marque et ton prénom. Copie-le puis colle-le dans TikTok.</span>
+    </div>
+    <div class="dlg-foot">
+      <div>
+        <button class="btn btn-ghost btn-danger" type="button" id="del-btn">Supprimer</button>
+      </div>
+      <div>
+        <button class="btn" type="button" id="copy-btn" hidden>Copier le message</button>
+        <button class="btn" type="button" id="done-btn">Action faite aujourd’hui</button>
+        <button class="btn btn-primary" type="submit" id="save-btn">Enregistrer</button>
+      </div>
+    </div>
+  </form>
+</dialog>
+
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+(() => {
+  const STAGES = [
+    { id: 'trouve', label: 'Trouvés', color: 'var(--s1)' },
+    { id: 'contacte', label: 'Contactés', color: 'var(--s2)' },
+    { id: 'echantillon', label: 'Échantillon envoyé', color: 'var(--s3)' },
+    { id: 'video', label: 'Vidéo postée', color: 'var(--s4)' },
+    { id: 'vend', label: 'Génère des ventes', color: 'var(--s5)' },
+  ];
+  const CATS = ['Beauté', 'Mode', 'Cuisine', 'Maison', 'Tech', 'Sport', 'Bébé', 'Animaux', 'Autre'];
+  // Délais (en jours) au-delà desquels un créateur demande une action
+  const RULES = { trouve: [5, 'À contacter'], contacte: [3, 'À relancer'], echantillon: [7, 'Vidéo en retard'] };
+  const KEY = 'creapilot-v1';
+  const AVATAR_COLORS = ['#C81D55', '#6D5BD0', '#0A7D78', '#C77A12', '#3B6FD4', '#8C3FB8'];
+
+  const $ = (s) => document.querySelector(s);
+  const today = () => new Date().toISOString().slice(0, 10);
+  const daysAgo = (n) => { const d = new Date(); d.setDate(d.getDate() - n); return d.toISOString().slice(0, 10); };
+  const daysSince = (iso) => Math.max(0, Math.floor((new Date(today()) - new Date(iso)) / 864e5));
+  const eur = (n) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n || 0);
+  const fmtFollowers = (n) => !n ? '—' : n >= 1e6 ? (n / 1e6).toFixed(1).replace('.', ',') + ' M' : n >= 1e3 ? String(Math.round(n / 100) / 10).replace('.', ',') + ' k' : String(n);
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const uid = () => Math.random().toString(36).slice(2, 10);
+  const handle = (h) => { h = String(h || '').trim(); return h.startsWith('@') ? h : '@' + h; };
+
+  function demo() {
+    return [
+      { handle: '@lea.glow', cat: 'Beauté', followers: 48200, commission: 15, product: 'Sérum vitamine C', stage: 'trouve', sales: 0, last: daysAgo(6), notes: 'Vidéos routine du matin, très bon taux d’engagement.' },
+      { handle: '@nico.unbox', cat: 'Tech', followers: 12800, commission: 12, product: 'Lampe LED de bureau', stage: 'trouve', sales: 0, last: daysAgo(1), notes: '' },
+      { handle: '@ines.makeup', cat: 'Beauté', followers: 96500, commission: 18, product: 'Sérum vitamine C', stage: 'contacte', sales: 0, last: daysAgo(4), notes: 'Message envoyé en DM, pas encore de réponse.' },
+      { handle: '@max.fitlife', cat: 'Sport', followers: 31000, commission: 15, product: 'Gourde isotherme', stage: 'contacte', sales: 0, last: daysAgo(1), notes: 'A répondu : intéressé, attend l’adresse.' },
+      { handle: '@sarah.cuisine', cat: 'Cuisine', followers: 22400, commission: 15, product: 'Set de couteaux', stage: 'echantillon', sales: 0, last: daysAgo(9), notes: 'Colis livré le lundi. Vidéo promise pour le week-end.' },
+      { handle: '@tom.maison', cat: 'Maison', followers: 15700, commission: 12, product: 'Diffuseur d’huiles', stage: 'echantillon', sales: 0, last: daysAgo(2), notes: '' },
+      { handle: '@julie.style', cat: 'Mode', followers: 67300, commission: 20, product: 'Sac bandoulière', stage: 'video', sales: 180, last: daysAgo(2), notes: 'Vidéo en ligne, bons commentaires.' },
+      { handle: '@emma.skin', cat: 'Beauté', followers: 128000, commission: 18, product: 'Sérum vitamine C', stage: 'vend', sales: 1240, last: daysAgo(3), notes: 'Top créatrice. Proposer une 2ᵉ vidéo.' },
+      { handle: '@leo.gadget', cat: 'Tech', followers: 54100, commission: 12, product: 'Lampe LED de bureau', stage: 'vend', sales: 860, last: daysAgo(5), notes: '' },
+    ].map((c) => ({ id: uid(), ...c }));
+  }
+
+  let state = { creators: [], brand: '', name: '' };
+  let usingDemo = true;
+  function load() {
+    try {
+      const raw = localStorage.getItem(KEY);
+      if (raw) { state = JSON.parse(raw); usingDemo = !!state.demo; return; }
+    } catch (e) { /* stockage indisponible : on garde les exemples en mémoire */ }
+    state = { creators: demo(), brand: '', name: '', demo: true };
+  }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+
+  const alertFor = (c) => { const r = RULES[c.stage]; return r && daysSince(c.last) >= r[0] ? r[1] : null; };
+  const commissionOf = (c) => (c.sales || 0) * (c.commission || 0) / 100;
+  const colorFor = (h) => AVATAR_COLORS[[...h].reduce((a, ch) => a + ch.charCodeAt(0), 0) % AVATAR_COLORS.length];
+
+  function render() {
+    const q = $('#search').value.trim().toLowerCase();
+    const list = state.creators.filter((c) => !q || [c.handle, c.product, c.cat, c.notes].join(' ').toLowerCase().includes(q));
+
+    const all = state.creators;
+    const alerts = all.filter(alertFor);
+    $('#st-total').textContent = all.length;
+    $('#st-samples').textContent = all.filter((c) => c.stage === 'echantillon').length;
+    $('#st-alerts').textContent = alerts.length;
+    $('#st-sales').textContent = eur(all.reduce((s, c) => s + (+c.sales || 0), 0));
+    $('#st-comm').textContent = eur(all.reduce((s, c) => s + commissionOf(c), 0));
+
+    const box = $('#alerts');
+    box.classList.toggle('empty', alerts.length === 0);
+    $('#alerts-title').textContent = alerts.length ? `À faire aujourd’hui (${alerts.length})` : 'Rien à relancer aujourd’hui';
+    $('#alert-list').innerHTML = alerts.map((c) =>
+      `<button class="alert-chip" type="button" data-open="${c.id}"><b>${esc(c.handle)}</b> <em>${alertFor(c)}</em> · ${daysSince(c.last)} j</button>`).join('');
+
+    $('#board').innerHTML = STAGES.map((s, i) => {
+      const cards = list.filter((c) => c.stage === s.id);
+      return `<div class="col" data-stage="${s.id}">
+        <div class="col-head"><h3><span class="dot" style="background:${s.color}"></span>${s.label}</h3><span class="count">${cards.length}</span></div>
+        ${cards.length ? cards.map((c) => card(c, i)).join('') : '<div class="col-empty">Glisse un créateur ici</div>'}
+      </div>`;
+    }).join('');
+
+    $('#data-note').textContent = usingDemo
+      ? 'Données d’exemple. Tout est enregistré seulement dans ce navigateur.'
+      : 'Tes données sont enregistrées seulement dans ce navigateur.';
+  }
+
+  function card(c, stageIndex) {
+    const a = alertFor(c);
+    const d = daysSince(c.last);
+    const money = c.sales > 0
+      ? `<div class="money num"><span class="sales">${eur(c.sales)}</span><span>${eur(commissionOf(c))} de comm.</span></div>` : '';
+    const next = stageIndex < STAGES.length - 1
+      ? `<button class="next" type="button" data-next="${c.id}">Suivant →</button>` : '';
+    return `<div class="card" draggable="true" data-id="${c.id}" tabindex="0" role="button" aria-label="Ouvrir ${esc(c.handle)}">
+      <div class="card-top">
+        <span class="avatar" style="background:${colorFor(c.handle)}">${esc(c.handle.replace('@', '').charAt(0).toUpperCase())}</span>
+        <span class="card-id"><b>${esc(c.handle)}</b><small>${esc(c.cat)} · ${fmtFollowers(+c.followers)} abonnés</small></span>
+      </div>
+      ${c.product ? `<small class="hint">${esc(c.product)} · ${+c.commission || 0} %</small>` : ''}
+      ${money}
+      <div class="card-foot">${a ? `<span class="pill">${a}</span>` : `<span>${d === 0 ? 'aujourd’hui' : 'il y a ' + d + ' j'}</span>`}${next}</div>
+    </div>`;
+  }
+
+  /* Glisser-déposer */
+  const board = $('#board');
+  board.addEventListener('dragstart', (e) => {
+    const el = e.target.closest('.card'); if (!el) return;
+    el.classList.add('dragging');
+    e.dataTransfer.setData('text/plain', el.dataset.id);
+    e.dataTransfer.effectAllowed = 'move';
+  });
+  board.addEventListener('dragend', (e) => { e.target.closest('.card')?.classList.remove('dragging'); });
+  board.addEventListener('dragover', (e) => {
+    const col = e.target.closest('.col'); if (!col) return;
+    e.preventDefault();
+    board.querySelectorAll('.col.drop').forEach((c) => c !== col && c.classList.remove('drop'));
+    col.classList.add('drop');
+  });
+  board.addEventListener('dragleave', (e) => { const col = e.target.closest('.col'); if (col && !col.contains(e.relatedTarget)) col.classList.remove('drop'); });
+  board.addEventListener('drop', (e) => {
+    const col = e.target.closest('.col'); if (!col) return;
+    e.preventDefault();
+    moveTo(e.dataTransfer.getData('text/plain'), col.dataset.stage);
+  });
+  board.addEventListener('click', (e) => {
+    const nx = e.target.closest('[data-next]');
+    if (nx) {
+      const c = byId(nx.dataset.next);
+      const i = STAGES.findIndex((s) => s.id === c.stage);
+      moveTo(c.id, STAGES[i + 1].id);
+      return;
+    }
+    const el = e.target.closest('.card'); if (el) openDialog(el.dataset.id);
+  });
+  board.addEventListener('keydown', (e) => {
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('card')) { e.preventDefault(); openDialog(e.target.dataset.id); }
+  });
+  $('#alert-list').addEventListener('click', (e) => { const b = e.target.closest('[data-open]'); if (b) openDialog(b.dataset.open); });
+
+  const byId = (id) => state.creators.find((c) => c.id === id);
+  function moveTo(id, stage) {
+    const c = byId(id); if (!c || c.stage === stage) { render(); return; }
+    c.stage = stage; c.last = today();
+    commit(`${c.handle} → ${STAGES.find((s) => s.id === stage).label}`);
+  }
+  function commit(msg) { state.demo = usingDemo; save(); render(); if (msg) toast(msg); }
+
+  /* Fenêtre fiche + messages */
+  const dlg = $('#dlg');
+  let editing = null, tpl = 'invite', delArmed = false;
+  $('#f-cat').innerHTML = CATS.map((c) => `<option>${c}</option>`).join('');
+  $('#f-stage').innerHTML = STAGES.map((s) => `<option value="${s.id}">${s.label}</option>`).join('');
+
+  function openDialog(id) {
+    editing = id ? byId(id) : null;
+    const c = editing || { handle: '', cat: 'Beauté', followers: '', commission: 15, product: '', stage: 'trouve', sales: 0, last: today(), notes: '' };
+    $('#dlg-title').textContent = editing ? c.handle : 'Nouveau créateur';
+    $('#f-handle').value = c.handle; $('#f-cat').value = c.cat; $('#f-followers').value = c.followers;
+    $('#f-commission').value = c.commission; $('#f-product').value = c.product; $('#f-stage').value = c.stage;
+    $('#f-sales').value = c.sales; $('#f-last').value = c.last; $('#f-notes').value = c.notes;
+    $('#del-btn').hidden = !editing; $('#done-btn').hidden = !editing;
+    resetDelete(); showTab('info'); updateCalc();
+    dlg.showModal();
+    $('#f-handle').focus();
+  }
+  function current() {
+    return {
+      handle: handle($('#f-handle').value || 'pseudo'), cat: $('#f-cat').value, followers: +$('#f-followers').value || 0,
+      commission: +$('#f-commission').value || 0, product: $('#f-product').value.trim(), stage: $('#f-stage').value,
+      sales: +$('#f-sales').value || 0, last: $('#f-last').value || today(), notes: $('#f-notes').value.trim(),
+    };
+  }
+  function updateCalc() {
+    const c = current();
+    $('#f-calc').textContent = c.sales > 0
+      ? `Commission due à ${c.handle} : ${eur(commissionOf(c))} (${c.commission} % de ${eur(c.sales)})`
+      : `Commission prévue : ${c.commission} % de chaque vente générée.`;
+  }
+  ['#f-sales', '#f-commission', '#f-handle'].forEach((s) => $(s).addEventListener('input', updateCalc));
+
+  function showTab(t) {
+    $('#tab-info').setAttribute('aria-selected', t === 'info');
+    $('#tab-msg').setAttribute('aria-selected', t === 'msg');
+    $('#pane-info').hidden = t !== 'info';
+    $('#pane-msg').hidden = t !== 'msg';
+    $('#copy-btn').hidden = t !== 'msg';
+    if (t === 'msg') writeMessage();
+  }
+  $('#tab-info').addEventListener('click', () => showTab('info'));
+  $('#tab-msg').addEventListener('click', () => showTab('msg'));
+  document.querySelectorAll('[data-tpl]').forEach((b) => b.addEventListener('click', () => {
+    tpl = b.dataset.tpl;
+    document.querySelectorAll('[data-tpl]').forEach((x) => x.setAttribute('aria-pressed', x === b));
+    writeMessage();
+  }));
+
+  function writeMessage() {
+    const c = current();
+    const brand = state.brand || '[ta marque]', me = state.name || '[ton prénom]';
+    const product = c.product || '[ton produit]';
+    const T = {
+      invite: `Bonjour ${c.handle} 👋\n\nJe suis ${me}, de ${brand}. J’adore tes vidéos ${c.cat.toLowerCase()}, ton style colle parfaitement à notre univers.\n\nJ’aimerais t’envoyer gratuitement notre ${product} pour que tu le testes. Si tu l’aimes et que tu en parles, tu touches ${c.commission} % de commission sur chaque vente via TikTok Shop (lien affilié dans ta vitrine).\n\nÇa te dirait ? Si oui, envoie-moi ton adresse de livraison et je t’expédie le colis cette semaine.\n\n${me}`,
+      relance: `Coucou ${c.handle} !\n\nJe reviens vers toi au sujet de notre ${product}. ${c.stage === 'echantillon' ? 'Tu as bien reçu le colis ? Tu as pu le tester ?' : 'Tu as eu le temps de voir mon message ?'}\n\nPas de pression : dis-moi simplement si ça t’intéresse toujours. La commission de ${c.commission} % tient toujours, et je peux t’envoyer des idées de vidéo si ça t’aide.\n\nBelle journée,\n${me} (${brand})`,
+      brief: `Brief vidéo · ${product}\n\nAccroche (3 premières secondes) :\n• « Je teste le ${product} dont tout le monde parle… »\n• ou montre directement le résultat avant / après.\n\nÀ montrer :\n• Le produit en main, en situation réelle (${c.cat.toLowerCase()}).\n• 1 ou 2 avantages concrets, avec tes mots.\n• Ton avis honnête.\n\nÀ la fin :\n• « Le lien est dans ma vitrine TikTok Shop. »\n\nFormat conseillé : 20 à 45 secondes, vertical, son tendance.\nCommission : ${c.commission} % sur chaque vente.\n\nMerci ${c.handle} !\n${me} (${brand})`,
+      merci: `Merci ${c.handle} 🙏\n\nTa vidéo sur le ${product} est top${c.sales > 0 ? ` : elle a déjà généré ${eur(c.sales)} de ventes, soit ${eur(commissionOf(c))} de commission pour toi` : ''} !\n\nOn aimerait continuer ensemble : partante / partant pour une deuxième vidéo, ou pour tester un autre produit de ${brand} ?\n\n${me}`,
+    };
+    $('#msg-out').value = T[tpl];
+  }
+
+  $('#copy-btn').addEventListener('click', async () => {
+    const ta = $('#msg-out');
+    try { await navigator.clipboard.writeText(ta.value); toast('Message copié'); }
+    catch (e) { ta.focus(); ta.select(); toast('Sélectionné : fais Ctrl+C (ou Copier)'); }
+  });
+
+  $('#form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (!$('#f-handle').value.trim()) { $('#f-handle').focus(); toast('Ajoute au moins le pseudo du créateur'); return; }
+    const data = current();
+    if (editing) {
+      if (editing.stage !== data.stage && data.last === editing.last) data.last = today();
+      Object.assign(editing, data);
+      commit('Fiche enregistrée');
+    } else {
+      state.creators.push({ id: uid(), ...data });
+      commit(`${data.handle} ajouté`);
+    }
+    dlg.close();
+  });
+  $('#done-btn').addEventListener('click', () => {
+    $('#f-last').value = today();
+    if (editing) { editing.last = today(); commit('Action notée pour aujourd’hui'); }
+  });
+  function resetDelete() { delArmed = false; $('#del-btn').textContent = 'Supprimer'; }
+  $('#del-btn').addEventListener('click', () => {
+    if (!delArmed) { delArmed = true; $('#del-btn').textContent = 'Confirmer la suppression'; return; }
+    state.creators = state.creators.filter((c) => c !== editing);
+    commit('Créateur supprimé');
+    dlg.close();
+  });
+  $('#dlg-close').addEventListener('click', () => dlg.close());
+  $('#add-btn').addEventListener('click', () => openDialog(null));
+
+  /* Réglages et données */
+  $('#s-brand').addEventListener('input', (e) => { state.brand = e.target.value; save(); });
+  $('#s-name').addEventListener('input', (e) => { state.name = e.target.value; save(); });
+  $('#search').addEventListener('input', render);
+
+  let clearArmed = false;
+  $('#clear-all').addEventListener('click', () => {
+    if (!clearArmed) { clearArmed = true; $('#clear-all').textContent = 'Confirmer : tout effacer'; return; }
+    clearArmed = false; $('#clear-all').textContent = 'Tout effacer';
+    state.creators = []; state.demo = false; usingDemo = false;
+    commit('Tableau vidé : ajoute ton premier créateur');
+  });
+  $('#reset-demo').addEventListener('click', () => {
+    state.creators = demo(); state.demo = true; usingDemo = true;
+    commit('Exemples rechargés');
+  });
+
+  let toastTimer;
+  function toast(msg) {
+    const t = $('#toast'); t.textContent = msg; t.hidden = false;
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, 2200);
+  }
+
+  load();
+  $('#s-brand').value = state.brand || '';
+  $('#s-name').value = state.name || '';
+  render();
+})();
+</script>
+</body>
+</html>
